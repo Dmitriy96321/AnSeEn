@@ -18,7 +18,7 @@ public class SiteEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Long id;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
