@@ -1,5 +1,9 @@
 package searchengine.services.indexing;
 
-public interface IndexingService <T> {
-    void deleteIndexingBySite(Long id);
+import org.springframework.http.ResponseEntity;
+import searchengine.dto.indexind.IndexingResponse;
+
+public interface IndexingService  {
+    IndexingResponse startIndexing();
+    IndexingResponse stopIndexing();
 }
