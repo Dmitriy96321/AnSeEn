@@ -1,8 +1,9 @@
 package searchengine.controllers;
 
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,14 +15,11 @@ import searchengine.services.statistics.StatisticsService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@Slf4j
 public class ApiController {
 
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
-
-//    public ApiController(StatisticsService statisticsService) {
-//        this.statisticsService = statisticsService;
-//    }
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -32,5 +30,11 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingResponse> startIndexing() {
         return ResponseEntity.ok(indexingService.startIndexing());
+    }
+    @GetMapping("/deleteAll")
+    public void deleteAll() {
+        log.info("Deleting all indexings is CONTROLLER");
+        indexingService.deleteAllSite();
+
     }
 }
