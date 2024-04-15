@@ -8,7 +8,7 @@ import searchengine.model.StatusType;
 
 @Repository
 public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
-
+    SiteEntity getIdByUrl(String url);
     boolean existsByUrl(String url);
     boolean existsByStatus(StatusType statusType);
 

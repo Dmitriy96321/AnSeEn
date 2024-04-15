@@ -28,7 +28,7 @@ public class LinksExtractorFJP extends RecursiveTask<Set<String>> {
 //        System.out.println(links +" poiii");
         for (String link : links) {
             if (linksAll.add(link)) {
-                setUrl.add(url);
+                linksAll.add(url);
                 setUrl.add(link);
                 LinksExtractorFJP task = new LinksExtractorFJP(link, httpParserJsoup);
                 task.fork();

@@ -12,6 +12,7 @@ import searchengine.model.StatusType;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
 import searchengine.services.indexing.parser.HttpParserJsoup;
+import searchengine.services.indexing.parser.LinksExtractorAction;
 import searchengine.services.indexing.parser.LinksExtractorFJP;
 
 import java.time.LocalDateTime;
@@ -38,6 +39,10 @@ public class IndexingServiceImpl implements IndexingService{
         log.info("Starting indexing");
         if (sitesRepository.existsByStatus(StatusType.INDEXING)){
             return IndexingResponse.builder().result(false).error("Indexing is started").build();
+        }
+        if (!sitesRepository.findAll().isEmpty() || !pagesRepository.findAll().isEmpty()) {
+            sitesRepository.deleteAll();
+            pagesRepository.deleteAll();
         }
         addSite();
         addPages();
@@ -71,10 +76,22 @@ public class IndexingServiceImpl implements IndexingService{
     }
     private void addPages(){
         log.info("Adding pages");
-        String url = sitesRepository.findAll().get(3).getUrl();
-        List<String> pages = new ForkJoinPool().invoke(new LinksExtractorFJP(url,httpParserJsoup)).stream().toList();
-        System.out.println(pages.size());
-//        log.info(config.getReferer() +  "" + config.getUserAgent());
+
+        List<SiteEntity> list = sitesRepository.findAll();
+        ForkJoinPool forkJoinPool = new ForkJoinPool(list.size());
+        list.forEach(siteEntity -> {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                log.error(e.getMessage() + " sleep interrupted");
+            }
+            forkJoinPool.invoke(new LinksExtractorAction(siteEntity,
+                    httpParserJsoup, pagesRepository, sitesRepository));
+        }
+    );
+
+//        forkJoinPool.invoke(new LinksExtractorAction(list.get(2),httpParserJsoup,pagesRepository,sitesRepository));
+
     }
 
     private void deleteIndexingSite(Site site) {}
