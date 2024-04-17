@@ -5,11 +5,12 @@ import org.springframework.stereotype.Repository;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 
+import java.util.List;
+
 
 @Repository
 public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
-    SiteEntity getIdByUrl(String url);
-    boolean existsByUrl(String url);
     boolean existsByStatus(StatusType statusType);
+    List<SiteEntity> findAllByStatus(StatusType statusType);
 
 }
