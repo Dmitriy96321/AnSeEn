@@ -15,6 +15,9 @@ import searchengine.services.indexing.parser.PagesExtractorAction;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 
@@ -26,25 +29,29 @@ public class IndexingServiceImpl implements IndexingService {
     private final PagesRepository pagesRepository;
     private final SitesList sitesList;
     private final HttpParserJsoup httpParserJsoup;
-    private ForkJoinPool forkJoinPool;
+    private final List<ForkJoinPool> forkJoinPools;
+
 
     @Override
     public IndexingResponse startIndexing() {
         log.info("Starting indexing");
-        if (sitesRepository.existsByStatus(StatusType.INDEXING)) {
-            return IndexingResponse.builder().result(false).error("Indexing is started").build();
+        if (indexingIsStated()) {
+            System.err.println("********* Starting indexing");
+            addAllSites();
+            return IndexingResponse.builder().result(true).build();
+
         }
-        System.err.println("********* Starting indexing");
-        addAllSites();
-        return IndexingResponse.builder().result(true).build();
+//        forkJoinPools = new ArrayList<>();
+
+        return IndexingResponse.builder().result(false).error("Indexing is started").build();
     }
 
     @Override
     public IndexingResponse stopIndexing() {
-        log.info("Stopping indexing " + forkJoinPool.isTerminated());
-        if (!forkJoinPool.isTerminated()) {
-            forkJoinPool.shutdownNow();
-            synchronized (sitesRepository) {
+//        log.info("Stopping indexing " + forkJoinPool.isTerminated());
+
+        if (!forkJoinPools.isEmpty()) {
+            forkJoinPools.forEach(ForkJoinPool::shutdownNow);
                 sitesRepository.findAll().forEach(siteEntity -> {
                     if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
                         siteEntity.setStatus(StatusType.FAILED);
@@ -52,7 +59,7 @@ public class IndexingServiceImpl implements IndexingService {
                         System.err.println();
                     }
                 });
-            }
+
             return IndexingResponse.builder().result(true).build();
         }
         return IndexingResponse.builder().result(false).error("Нет сайтов на индексации.").build();
@@ -66,14 +73,18 @@ public class IndexingServiceImpl implements IndexingService {
         if (!pagesRepository.findAll().isEmpty()) {
             pagesRepository.deleteAll();
         }
-        forkJoinPool = new ForkJoinPool();
+
         sitesList.getSites().forEach(site -> {
+            ForkJoinPool pool = new ForkJoinPool(
+                    Runtime.getRuntime().availableProcessors()  / sitesList.getSites().size()
+            );
+            System.err.println(pool.isTerminated() + " " + pool.getActiveThreadCount() + " " + pool.getPoolSize());
             SiteEntity siteEntity = getSiteEntity(site);
             sitesRepository.save(siteEntity);
-            forkJoinPool.execute(new PagesExtractorAction(siteEntity,
-                    httpParserJsoup, pagesRepository, sitesRepository));
+            pool.execute(new PagesExtractorAction(siteEntity,
+                    httpParserJsoup, pagesRepository, sitesRepository, pool));
+            forkJoinPools.add(pool);
         });
-
     }
 
     @Override
@@ -88,6 +99,8 @@ public class IndexingServiceImpl implements IndexingService {
         siteEntity.setName(site.getName());
         siteEntity.setUrl(site.getUrl());
         siteEntity.setStatusTime(LocalDateTime.now());
+
+
         try {
             httpParserJsoup.getConnect(site.getUrl()).execute().statusCode();
             siteEntity.setStatus(StatusType.INDEXING);
@@ -101,6 +114,18 @@ public class IndexingServiceImpl implements IndexingService {
 
 
         return siteEntity;
+    }
+    private boolean indexingIsStated() {
+        if (forkJoinPools.isEmpty()) {
+            return true;
+        }
+
+         for (ForkJoinPool pool : forkJoinPools) {
+             if (pool.getActiveThreadCount() > 0) {
+                 return false;
+             }
+         }
+         return true;
     }
 
 }

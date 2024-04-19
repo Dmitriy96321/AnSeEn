@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import searchengine.config.ClientConfig;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -30,9 +30,9 @@ public class HttpParserJsoup implements HttpParser {
     }
 
     @Override
-    public List<String> extractLinks(String url) {
+    public Set<String> extractLinks(String url) {
         try {
-            List<String> links = getConnect(url)
+            Set<String> links = getConnect(url)
                     .get()
                     .select("a[href*=/]")
                     .stream()
@@ -47,12 +47,12 @@ public class HttpParserJsoup implements HttpParser {
                         }
                         return href;
                     })
-                    .sorted()
-                    .toList();
+                    .collect(Collectors.toSet());
             return links;
         } catch (IOException e) {
             log.error(e + " - extractLinks");
         }
-        return List.of();
+
+        return Set.of();
     }
 }

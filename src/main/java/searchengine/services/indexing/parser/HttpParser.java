@@ -1,8 +1,8 @@
 package searchengine.services.indexing.parser;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Set;
 
 public interface HttpParser {
-    List<String> extractLinks(String url) throws IOException;
+    Set<String> extractLinks(String url) throws IOException;
 }
