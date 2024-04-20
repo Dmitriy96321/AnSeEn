@@ -2,11 +2,9 @@ package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexind.IndexingResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.indexing.IndexingService;
@@ -35,10 +33,5 @@ public class ApiController {
     public ResponseEntity<IndexingResponse> startIndexing() {
         return ResponseEntity.ok(indexingService.startIndexing());
     }
-    @GetMapping ("/deleteAll")
-    public void deleteAll() {
-        log.info("Deleting all indexings is CONTROLLER");
-        indexingService.deleteAllSite();
 
-    }
 }

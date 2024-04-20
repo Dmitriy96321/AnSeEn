@@ -36,4 +36,5 @@ public class SiteEntity {
     @Column(name = "name")
     private String name;
 
+
 }

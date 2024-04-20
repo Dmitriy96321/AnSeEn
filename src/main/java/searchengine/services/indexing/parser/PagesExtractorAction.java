@@ -1,16 +1,15 @@
 package searchengine.services.indexing.parser;
 
 
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Connection;
+import searchengine.config.Site;
+import searchengine.model.EntityCreator;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,31 +22,41 @@ import java.util.concurrent.RecursiveAction;
 @Slf4j
 public class PagesExtractorAction extends RecursiveAction {
 
-    private SiteEntity site;
+    private Site site;
+    private SiteEntity siteEntity;
     private String url;
-    private HttpParserJsoup httpParserJsoup;
+    private final HttpParserJsoup httpParserJsoup;
     private final PagesRepository pagesRepository;
     private final SitesRepository sitesRepository;
     private final Set<String> PAGES_CASH;
     private final ForkJoinPool thisPool;
+    private final EntityCreator entityCreator;
 
-    public PagesExtractorAction(SiteEntity site, HttpParserJsoup httpParserJsoup,
-                                PagesRepository pagesRepository, SitesRepository sitesRepository,ForkJoinPool thisPool) {
 
+    public PagesExtractorAction(Site site, HttpParserJsoup httpParserJsoup,
+                                PagesRepository pagesRepository, SitesRepository sitesRepository,
+                                ForkJoinPool thisPool, EntityCreator entityCreator) {
+        this.entityCreator = entityCreator;
         this.site = site;
+        this.siteEntity = entityCreator.createSiteEntity(site);
         this.url = site.getUrl();
         this.httpParserJsoup = httpParserJsoup;
         this.pagesRepository = pagesRepository;
         this.sitesRepository = sitesRepository;
         this.PAGES_CASH = ConcurrentHashMap.newKeySet();
         this.thisPool = thisPool;
+        sitesRepository.save(siteEntity);
     }
 
-    public PagesExtractorAction(SiteEntity site, String url,
-                                HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
-                                SitesRepository sitesRepository, Set<String> PAGES_CASH, ForkJoinPool thisPool) {
 
+    public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
+                                HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
+                                SitesRepository sitesRepository, Set<String> PAGES_CASH, ForkJoinPool thisPool,
+                                EntityCreator entityCreator) {
+
+        this.entityCreator = entityCreator;
         this.site = site;
+        this.siteEntity = siteEntity;
         this.url = url;
         this.httpParserJsoup = httpParserJsoup;
         this.pagesRepository = pagesRepository;
@@ -58,72 +67,39 @@ public class PagesExtractorAction extends RecursiveAction {
 
     @Override
     protected void compute() {
-
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
         List<PageEntity> listPage = new ArrayList<>();
         for (String link : links) {
-            if (site.getStatus().equals(StatusType.FAILED)){
+            if (site.isIndexingIsStopped()) {
                 return;
             }
-            if (PAGES_CASH.add(url)){
-                listPage.add(createPageEntity(url));
+            if (PAGES_CASH.add(url)) {
+                listPage.add(entityCreator.createPageEntity(url, siteEntity));
             }
             if (PAGES_CASH.add(link)) {
-                listPage.add(createPageEntity(link));
-                PagesExtractorAction task = new PagesExtractorAction(site, link,
-                        httpParserJsoup, pagesRepository, sitesRepository, PAGES_CASH, thisPool);
+                listPage.add(entityCreator.createPageEntity(link, siteEntity));
+                PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
+                        httpParserJsoup, pagesRepository,
+                        sitesRepository, PAGES_CASH, thisPool , entityCreator);
                 task.fork();
                 taskList.add(task);
             }
         }
         pagesRepository.saveAll(listPage);
         LocalDateTime time = LocalDateTime.now();
-        site.setStatusTime(time);
+        siteEntity.setStatusTime(time);
+        sitesRepository.setStatusTime(time, siteEntity.getId());
 
         for (PagesExtractorAction task : taskList) {
             task.join();
         }
-//        System.err.println(thisPool.getQueuedTaskCount() + " tasks extracted");
 
-
-        if (thisPool.getQueuedTaskCount() == 0
-//                && isIndexing(site)
-        ) {
-//            System.err.println(thisPool.getPoolSize() + " PoolSize pages extracted");
-            System.err.println(thisPool.getQueuedTaskCount() + " tasks extracted");
-            site.setStatus(StatusType.INDEXED);
-            sitesRepository.save(site);
+        if (!site.isIndexingIsStopped() && thisPool.getQueuedTaskCount() == 0) {
+            siteEntity.setStatus(StatusType.INDEXED);
+            sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
         }
     }
 
-    private boolean isIndexing(SiteEntity site) {
-        return sitesRepository.findById(site.getId()).orElseThrow().getStatus().equals(StatusType.INDEXING);
-    }
 
-
-
-
-
-    private PageEntity createPageEntity(String link) {
-        int responseCode;
-        PageEntity pageEntity = new PageEntity();
-        Connection.Response response = null;
-        pageEntity.setPath(link);
-        pageEntity.setSiteId(site);
-
-        try {
-            response = httpParserJsoup.getConnect(link).execute();
-            responseCode = response.statusCode();
-            pageEntity.setCode(responseCode);
-            pageEntity.setContent((responseCode == 200) ? response.parse().toString() :
-                    response.statusMessage());
-
-        } catch (IOException e) {
-            log.error(e + e.getMessage() + " " + link + " createPageEntity ");
-            return pageEntity;
-        }
-
-        return pageEntity;
-    }
 }

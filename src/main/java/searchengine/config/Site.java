@@ -8,5 +8,5 @@ import lombok.Setter;
 public class Site {
     private String url;
     private String name;
-    private boolean isStop;
+    private boolean indexingIsStopped = false;
 }
