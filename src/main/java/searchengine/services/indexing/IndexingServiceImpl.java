@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.indexind.IndexingResponse;
 import searchengine.model.EntityCreator;
+import searchengine.model.PageEntity;
+import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
@@ -55,6 +57,26 @@ public class IndexingServiceImpl implements IndexingService {
             return IndexingResponse.builder().result(true).build();
         }
         return IndexingResponse.builder().result(false).error("Нет сайтов на индексации.").build();
+    }
+
+    @Override
+    @Transactional
+    public IndexingResponse indexPage(String urlPage) {
+        log.info("Indexing page {}", urlPage);
+        SiteEntity siteEntity = sitesRepository.findBySiteUrl(urlPage.substring(0, urlPage.indexOf("/",8)));
+        if (siteEntity == null) {
+            return IndexingResponse.builder().result(false).error("Данная страница находится за пределами сайтов, \n" +
+                    "указанных в конфигурационном файле\n").build();
+        }
+        PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity );
+        PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
+        if ( pageEntity != null){
+            pageEntity.setContent(newPageEntity.getContent());
+            pageEntity.setCode(newPageEntity.getCode());
+        }else {
+            pagesRepository.save(entityCreator.createPageEntity(urlPage, siteEntity));
+        }
+        return IndexingResponse.builder().result(true).build();
     }
 
 
