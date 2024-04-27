@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @NoArgsConstructor
-@Table(name = "`index`")
+@Table(name = "`indexes`")
 public class IndexEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,13 +18,13 @@ public class IndexEntity {
 
     @ManyToOne
     @JoinColumn(name = "page_id")
-    private SiteEntity pageId;
+    private PageEntity pageId;
 
     @ManyToOne
     @JoinColumn(name = "lemma_id")
-    private SiteEntity lemmaId;
+    private LemmaEntity lemmaId;
 
-    @Column(name = "rank")
+    @Column(name = "ranks")
     private Float rank;
 
 }

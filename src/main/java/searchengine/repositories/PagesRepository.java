@@ -19,4 +19,13 @@ public interface PagesRepository extends JpaRepository<PageEntity, Long> {
     @Transactional
     @Query(value = "select * from page p where p.path = :path", nativeQuery = true)
     PageEntity findByPageUrl(@Param("path") String path);
+
+
+
+    @Transactional
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM PageEntity p WHERE p.path = :path")
+    boolean existsByPageUrl(@Param("path") String path);
+
+
+
 }

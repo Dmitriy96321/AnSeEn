@@ -10,10 +10,14 @@ import searchengine.model.EntityCreator;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
+import searchengine.parser.LemmaParser;
+import searchengine.repositories.IndexesRepository;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
-import searchengine.services.indexing.parser.HttpParserJsoup;
-import searchengine.services.indexing.parser.PagesExtractorAction;
+import searchengine.parser.HttpParserJsoup;
+import searchengine.parser.PagesExtractorAction;
+
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
@@ -24,10 +28,13 @@ import java.util.concurrent.ForkJoinPool;
 public class IndexingServiceImpl implements IndexingService {
     private final SitesRepository sitesRepository;
     private final PagesRepository pagesRepository;
+    private final LemmaRepository lemmasRepository;
+    private final IndexesRepository indexRepository;
     private final SitesList sitesList;
     private final HttpParserJsoup httpParserJsoup;
     private final List<ForkJoinPool> forkJoinPools;
     private final EntityCreator entityCreator;
+    private final LemmaParser lemmaParser;
 
 
     @Override
@@ -79,19 +86,30 @@ public class IndexingServiceImpl implements IndexingService {
         return IndexingResponse.builder().result(true).build();
     }
 
+    @Override
+    public void someMethod(Long id) {
+        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
+//        entityCreator.createLemmaForPage(pageEntity).forEach(System.out::println);
+//        lemmaParser.getLemmasForPage(pageEntity).entrySet().forEach(System.out::println);
+    }
+
 
     private void addAllSites() {
         forkJoinPools.clear();
         log.info("Adding site");
         sitesRepository.truncateTableSite();
         pagesRepository.truncateTablePage();
+        lemmasRepository.truncateTableLemma();
+        indexRepository.truncateTableIndexes();
 
         sitesList.getSites().forEach(site -> {
-            ForkJoinPool pool = new ForkJoinPool();
-            System.err.println(pool.isTerminated() + " " + pool.getActiveThreadCount() + " " + pool.getPoolSize());
+            ForkJoinPool pool = new ForkJoinPool(4);
+//            System.err.println(pool.isTerminated() + " " + pool.getActiveThreadCount() + " " + pool.getPoolSize());
 
             pool.execute(new PagesExtractorAction(site, httpParserJsoup,
-                    pagesRepository, sitesRepository, pool, entityCreator));
+                    pagesRepository, sitesRepository,
+                    lemmasRepository, indexRepository,
+                    pool, entityCreator));
             forkJoinPools.add(pool);
         });
     }
@@ -108,5 +126,6 @@ public class IndexingServiceImpl implements IndexingService {
          }
          return false;
     }
+
 
 }

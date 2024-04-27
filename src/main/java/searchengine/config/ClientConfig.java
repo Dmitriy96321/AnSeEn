@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 @Setter
 @Component
 @ConfigurationProperties(prefix = "connection-config")
+
 public class ClientConfig {
     private String userAgent;
     private String referer;

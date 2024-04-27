@@ -27,4 +27,5 @@ public class LemmaEntity {
     @Column(name = "frequency")
     private Integer frequency;
 
+
 }

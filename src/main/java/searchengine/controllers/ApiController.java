@@ -38,4 +38,9 @@ public class ApiController {
         return ResponseEntity.ok(indexingService.indexPage(url));
     }
 
+    @GetMapping("/Page/{id}")
+    void someMethod(@PathVariable Long id){
+        indexingService.someMethod(id);
+    }
+
 }

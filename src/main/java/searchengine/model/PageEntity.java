@@ -31,4 +31,6 @@ public class PageEntity {
 
     @Column(name = "content")
     private String content;
+
+
 }

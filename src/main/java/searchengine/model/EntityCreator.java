@@ -5,11 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import searchengine.config.Site;
-import searchengine.services.indexing.parser.HttpParserJsoup;
+import searchengine.parser.HttpParserJsoup;
+import searchengine.parser.LemmaParser;
+import searchengine.repositories.LemmaRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Scope("prototype")
@@ -17,6 +23,7 @@ import java.time.LocalDateTime;
 @Slf4j
 public class EntityCreator {
     private final HttpParserJsoup httpParserJsoup;
+    private final LemmaParser lemmaParser;
 
     public PageEntity createPageEntity(String link, SiteEntity siteEntity) {
         int responseCode;
@@ -56,6 +63,27 @@ public class EntityCreator {
             System.out.println(siteEntity.getStatus());
         }
         return siteEntity;
+    }
+
+    public LemmaEntity createLemmaForPage(SiteEntity site, String lemma, Integer frequency){
+        LemmaEntity lemmaEntity = new LemmaEntity();
+        lemmaEntity.setSiteId(site);
+        lemmaEntity.setLemma(lemma);
+        lemmaEntity.setFrequency(frequency);
+        return lemmaEntity;
+    }
+
+    public IndexEntity createIndexEntity(PageEntity pageEntity, LemmaEntity lemmaEntity, Float rank){
+        IndexEntity indexEntity = new IndexEntity();
+        indexEntity.setPageId(pageEntity);
+        indexEntity.setLemmaId(lemmaEntity);
+        indexEntity.setRank(rank);
+
+        return indexEntity;
+    }
+    public Map<String, Integer> getLemmaForPage(PageEntity pageEntity){
+        log.info("getLemmaForPage + 1");
+        return lemmaParser.getLemmasForPage(pageEntity);
     }
 
 }

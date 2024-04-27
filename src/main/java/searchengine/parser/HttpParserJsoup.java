@@ -1,4 +1,4 @@
-package searchengine.services.indexing.parser;
+package searchengine.parser;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +48,7 @@ public class HttpParserJsoup implements HttpParser {
                         return href;
                     })
                     .collect(Collectors.toSet());
+            links.add(url);
             return links;
         } catch (IOException e) {
             log.error(e + " - extractLinks");

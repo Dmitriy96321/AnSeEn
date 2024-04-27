@@ -1,15 +1,15 @@
-package searchengine.services.indexing.parser;
+package searchengine.parser;
 
 
 import lombok.extern.slf4j.Slf4j;
 import searchengine.config.Site;
-import searchengine.model.EntityCreator;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
+import searchengine.model.*;
+import searchengine.repositories.IndexesRepository;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,14 +28,20 @@ public class PagesExtractorAction extends RecursiveAction {
     private final HttpParserJsoup httpParserJsoup;
     private final PagesRepository pagesRepository;
     private final SitesRepository sitesRepository;
+    private final LemmaRepository lemmasRepository;
+    private final IndexesRepository indexRepository;
     private final Set<String> PAGES_CASH;
+    private final Set<String> LEMMAS_CASH;
     private final ForkJoinPool thisPool;
     private final EntityCreator entityCreator;
 
 
+
     public PagesExtractorAction(Site site, HttpParserJsoup httpParserJsoup,
                                 PagesRepository pagesRepository, SitesRepository sitesRepository,
+                                LemmaRepository lemmasRepository, IndexesRepository indexRepository,
                                 ForkJoinPool thisPool, EntityCreator entityCreator) {
+        this.LEMMAS_CASH = ConcurrentHashMap.newKeySet();
         this.entityCreator = entityCreator;
         this.site = site;
         this.siteEntity = entityCreator.createSiteEntity(site);
@@ -45,14 +51,18 @@ public class PagesExtractorAction extends RecursiveAction {
         this.sitesRepository = sitesRepository;
         this.PAGES_CASH = ConcurrentHashMap.newKeySet();
         this.thisPool = thisPool;
+        this.lemmasRepository = lemmasRepository;
+        this.indexRepository = indexRepository;
         sitesRepository.save(siteEntity);
     }
 
 
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
                                 HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
-                                SitesRepository sitesRepository, Set<String> PAGES_CASH, ForkJoinPool thisPool,
+                                LemmaRepository lemmasRepository, IndexesRepository indexRepository,
+                                SitesRepository sitesRepository, Set<String> PAGES_CASH, Set<String> lemmasCash, ForkJoinPool thisPool,
                                 EntityCreator entityCreator) {
+        LEMMAS_CASH = lemmasCash;
 
         this.entityCreator = entityCreator;
         this.site = site;
@@ -63,43 +73,44 @@ public class PagesExtractorAction extends RecursiveAction {
         this.sitesRepository = sitesRepository;
         this.PAGES_CASH = PAGES_CASH;
         this.thisPool = thisPool;
+        this.lemmasRepository = lemmasRepository;
+        this.indexRepository = indexRepository;
     }
 
     @Override
     protected void compute() {
+
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
-        List<PageEntity> listPage = new ArrayList<>();
+        System.out.println("START COMPUTING PAGES EXTRACTOR ACTION");
         for (String link : links) {
             if (site.isIndexingIsStopped()) {
                 return;
             }
-            if (PAGES_CASH.add(url)) {
-                listPage.add(entityCreator.createPageEntity(url, siteEntity));
-            }
-            if (PAGES_CASH.add(link)) {
-                listPage.add(entityCreator.createPageEntity(link, siteEntity));
+            if (!pagesRepository.existsByPageUrl(link.substring(siteEntity.getUrl().length()))){
+                savePage(link);
                 PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
                         httpParserJsoup, pagesRepository,
-                        sitesRepository, PAGES_CASH, thisPool , entityCreator);
+                        lemmasRepository, indexRepository,
+                        sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator);
                 task.fork();
                 taskList.add(task);
             }
         }
-        pagesRepository.saveAll(listPage);
-        LocalDateTime time = LocalDateTime.now();
-        siteEntity.setStatusTime(time);
-        sitesRepository.setStatusTime(time, siteEntity.getId());
-
         for (PagesExtractorAction task : taskList) {
             task.join();
         }
 
-        if (!site.isIndexingIsStopped() && thisPool.getQueuedTaskCount() == 0) {
+        if (!site.isIndexingIsStopped()) {
             siteEntity.setStatus(StatusType.INDEXED);
             sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
         }
     }
-
-
+    private void savePage(String link){
+        PageEntity pageEntity = entityCreator.createPageEntity(link, siteEntity);
+        pagesRepository.save(pageEntity);
+        LocalDateTime time = LocalDateTime.now();
+        siteEntity.setStatusTime(time);
+        sitesRepository.setStatusTime(time, siteEntity.getId());
+    }
 }

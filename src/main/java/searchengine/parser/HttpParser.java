@@ -1,4 +1,4 @@
-package searchengine.services.indexing.parser;
+package searchengine.parser;
 
 import java.io.IOException;
 import java.util.Set;
