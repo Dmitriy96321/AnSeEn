@@ -25,13 +25,13 @@ indexing-settings:
 #    - url: https://etype.ru/privacy1
 #      name: Етайп
 #
-#    - url: https://Sendel.ru/
-#      name: Константин Шибков
-    - url: https://trycpt.ru/
+    - url: https://Sendel.ru/
       name: Константин Шибков
+#    - url: https://trycpt.ru/
+#      name: Константин Шибков
 
-    - url: https://nopaper.ru/
-      name: Nopaper
+#    - url: https://nopaper.ru/
+#      name: Nopaper
 
 #    - url: https://www.lenta.ru/
 #      name: Лента.ру
