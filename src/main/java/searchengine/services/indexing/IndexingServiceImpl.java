@@ -88,7 +88,9 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public void someMethod(Long id) {
-        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
+        System.out.println(id);
+        pagesRepository.deleteDuplicatePages();
+//        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
 //        entityCreator.createLemmaForPage(pageEntity).forEach(System.out::println);
 //        lemmaParser.getLemmasForPage(pageEntity).entrySet().forEach(System.out::println);
     }

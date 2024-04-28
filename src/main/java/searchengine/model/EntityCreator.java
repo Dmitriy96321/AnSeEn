@@ -10,6 +10,7 @@ import searchengine.config.Site;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
 import searchengine.repositories.LemmaRepository;
+import searchengine.repositories.PagesRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -22,10 +23,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class EntityCreator {
+    private final PagesRepository pagesRepository;
     private final HttpParserJsoup httpParserJsoup;
     private final LemmaParser lemmaParser;
 
-    public PageEntity createPageEntity(String link, SiteEntity siteEntity) {
+    public  PageEntity createPageEntity(String link, SiteEntity siteEntity) {
         int responseCode;
         PageEntity pageEntity = new PageEntity();
         Connection.Response response = null;

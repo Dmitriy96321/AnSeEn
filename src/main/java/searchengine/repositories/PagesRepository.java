@@ -26,6 +26,11 @@ public interface PagesRepository extends JpaRepository<PageEntity, Long> {
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM PageEntity p WHERE p.path = :path")
     boolean existsByPageUrl(@Param("path") String path);
 
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM page WHERE id NOT IN (SELECT MIN(id) FROM page GROUP BY path)", nativeQuery = true)
+    void deleteDuplicatePages();
+
 
 
 }

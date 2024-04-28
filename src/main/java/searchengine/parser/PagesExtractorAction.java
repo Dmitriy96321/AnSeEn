@@ -82,19 +82,22 @@ public class PagesExtractorAction extends RecursiveAction {
 
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
-        System.out.println("START COMPUTING PAGES EXTRACTOR ACTION");
         for (String link : links) {
             if (site.isIndexingIsStopped()) {
                 return;
             }
-            if (!pagesRepository.existsByPageUrl(link.substring(siteEntity.getUrl().length()))){
-                savePage(link);
-                PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
-                        httpParserJsoup, pagesRepository,
-                        lemmasRepository, indexRepository,
-                        sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator);
-                task.fork();
-                taskList.add(task);
+            synchronized (pagesRepository){
+                if (!pagesRepository.existsByPageUrl(link.substring(siteEntity.getUrl().length()))) {
+                    savePage(link);
+
+                    PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
+                            httpParserJsoup, pagesRepository,
+                            lemmasRepository, indexRepository,
+                            sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator);
+                    task.fork();
+                    taskList.add(task);
+
+                }
             }
         }
         for (PagesExtractorAction task : taskList) {
