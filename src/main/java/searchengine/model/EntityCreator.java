@@ -5,17 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import redis.clients.jedis.Jedis;
 import searchengine.config.Site;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -23,7 +20,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class EntityCreator {
-    private final PagesRepository pagesRepository;
     private final HttpParserJsoup httpParserJsoup;
     private final LemmaParser lemmaParser;
 
@@ -84,8 +80,10 @@ public class EntityCreator {
         return indexEntity;
     }
     public Map<String, Integer> getLemmaForPage(PageEntity pageEntity){
-        log.info("getLemmaForPage + 1");
+//        log.info("getLemmaForPage + 1");
         return lemmaParser.getLemmasForPage(pageEntity);
     }
+
+
 
 }

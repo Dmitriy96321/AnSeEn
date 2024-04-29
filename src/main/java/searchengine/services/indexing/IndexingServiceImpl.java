@@ -3,7 +3,9 @@ package searchengine.services.indexing;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
 import searchengine.dto.indexind.IndexingResponse;
 import searchengine.model.EntityCreator;
@@ -35,6 +37,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final List<ForkJoinPool> forkJoinPools;
     private final EntityCreator entityCreator;
     private final LemmaParser lemmaParser;
+    private final Jedis jedis;
 
 
     @Override
@@ -103,10 +106,10 @@ public class IndexingServiceImpl implements IndexingService {
         pagesRepository.truncateTablePage();
         lemmasRepository.truncateTableLemma();
         indexRepository.truncateTableIndexes();
+        jedis.flushAll();
 
         sitesList.getSites().forEach(site -> {
-            ForkJoinPool pool = new ForkJoinPool(4);
-//            System.err.println(pool.isTerminated() + " " + pool.getActiveThreadCount() + " " + pool.getPoolSize());
+            ForkJoinPool pool = new ForkJoinPool();
 
             pool.execute(new PagesExtractorAction(site, httpParserJsoup,
                     pagesRepository, sitesRepository,

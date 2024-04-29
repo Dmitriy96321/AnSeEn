@@ -2,6 +2,7 @@ package searchengine.parser;
 
 
 import lombok.extern.slf4j.Slf4j;
+import searchengine.config.LettuceConcurrentSet;
 import searchengine.config.Site;
 import searchengine.model.*;
 import searchengine.repositories.IndexesRepository;
@@ -9,15 +10,10 @@ import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
 import searchengine.repositories.SitesRepository;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.*;
 
 @Slf4j
 public class PagesExtractorAction extends RecursiveAction {
@@ -34,7 +30,7 @@ public class PagesExtractorAction extends RecursiveAction {
     private final Set<String> LEMMAS_CASH;
     private final ForkJoinPool thisPool;
     private final EntityCreator entityCreator;
-
+    private LettuceConcurrentSet concurrentSet;
 
 
     public PagesExtractorAction(Site site, HttpParserJsoup httpParserJsoup,
@@ -54,6 +50,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
         sitesRepository.save(siteEntity);
+        this.concurrentSet = new LettuceConcurrentSet(siteEntity.getId().toString());
     }
 
 
@@ -61,7 +58,7 @@ public class PagesExtractorAction extends RecursiveAction {
                                 HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
                                 LemmaRepository lemmasRepository, IndexesRepository indexRepository,
                                 SitesRepository sitesRepository, Set<String> PAGES_CASH, Set<String> lemmasCash, ForkJoinPool thisPool,
-                                EntityCreator entityCreator) {
+                                EntityCreator entityCreator, LettuceConcurrentSet concurrentSet) {
         LEMMAS_CASH = lemmasCash;
 
         this.entityCreator = entityCreator;
@@ -75,6 +72,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.thisPool = thisPool;
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
+        this.concurrentSet = concurrentSet;
     }
 
     @Override
@@ -82,23 +80,24 @@ public class PagesExtractorAction extends RecursiveAction {
 
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
+
         for (String link : links) {
             if (site.isIndexingIsStopped()) {
                 return;
             }
-            synchronized (pagesRepository){
-                if (!pagesRepository.existsByPageUrl(link.substring(siteEntity.getUrl().length()))) {
-                    savePage(link);
-
+                if (concurrentSet.add(link)) {
+                    PageEntity pageEntity = entityCreator.createPageEntity(link,siteEntity);
+                    pagesRepository.save(pageEntity);
+                    saveTime(link);
                     PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
                             httpParserJsoup, pagesRepository,
                             lemmasRepository, indexRepository,
-                            sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator);
+                            sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator, concurrentSet);
                     task.fork();
                     taskList.add(task);
 
                 }
-            }
+
         }
         for (PagesExtractorAction task : taskList) {
             task.join();
@@ -107,11 +106,12 @@ public class PagesExtractorAction extends RecursiveAction {
         if (!site.isIndexingIsStopped()) {
             siteEntity.setStatus(StatusType.INDEXED);
             sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
+//            concurrentSet.close();
         }
     }
-    private void savePage(String link){
-        PageEntity pageEntity = entityCreator.createPageEntity(link, siteEntity);
-        pagesRepository.save(pageEntity);
+    private void saveTime(String link){
+//        PageEntity pageEntity = pagesRepository.findByPageUrl(link.substring(siteEntity.getUrl().length()));
+//        entityCreator.getLemmaForPage(pageEntity);
         LocalDateTime time = LocalDateTime.now();
         siteEntity.setStatusTime(time);
         sitesRepository.setStatusTime(time, siteEntity.getId());

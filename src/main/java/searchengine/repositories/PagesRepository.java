@@ -11,6 +11,8 @@ import searchengine.model.SiteEntity;
 
 @Repository
 public interface PagesRepository extends JpaRepository<PageEntity, Long> {
+
+
     @Modifying
     @Transactional
     @Query(value = "TRUNCATE TABLE page", nativeQuery = true)

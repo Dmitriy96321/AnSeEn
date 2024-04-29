@@ -1,18 +1,16 @@
 package searchengine.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.io.Serializable;
 
 @Entity
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "page")
-public class PageEntity {
+public class PageEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,5 +30,13 @@ public class PageEntity {
     @Column(name = "content")
     private String content;
 
-
+    @Override
+    public String toString() {
+        return "PageEntity{" +
+                "code=" + code +
+                ", path='" + path + '\'' +
+                ", siteId=" + siteId +
+                ", id=" + id +
+                '}';
+    }
 }
