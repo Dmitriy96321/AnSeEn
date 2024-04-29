@@ -26,8 +26,6 @@ public class PagesExtractorAction extends RecursiveAction {
     private final SitesRepository sitesRepository;
     private final LemmaRepository lemmasRepository;
     private final IndexesRepository indexRepository;
-    private final Set<String> PAGES_CASH;
-    private final Set<String> LEMMAS_CASH;
     private final ForkJoinPool thisPool;
     private final EntityCreator entityCreator;
     private LettuceConcurrentSet concurrentSet;
@@ -37,7 +35,6 @@ public class PagesExtractorAction extends RecursiveAction {
                                 PagesRepository pagesRepository, SitesRepository sitesRepository,
                                 LemmaRepository lemmasRepository, IndexesRepository indexRepository,
                                 ForkJoinPool thisPool, EntityCreator entityCreator) {
-        this.LEMMAS_CASH = ConcurrentHashMap.newKeySet();
         this.entityCreator = entityCreator;
         this.site = site;
         this.siteEntity = entityCreator.createSiteEntity(site);
@@ -45,7 +42,6 @@ public class PagesExtractorAction extends RecursiveAction {
         this.httpParserJsoup = httpParserJsoup;
         this.pagesRepository = pagesRepository;
         this.sitesRepository = sitesRepository;
-        this.PAGES_CASH = ConcurrentHashMap.newKeySet();
         this.thisPool = thisPool;
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
@@ -57,9 +53,9 @@ public class PagesExtractorAction extends RecursiveAction {
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
                                 HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
                                 LemmaRepository lemmasRepository, IndexesRepository indexRepository,
-                                SitesRepository sitesRepository, Set<String> PAGES_CASH, Set<String> lemmasCash, ForkJoinPool thisPool,
+                                SitesRepository sitesRepository, ForkJoinPool thisPool,
                                 EntityCreator entityCreator, LettuceConcurrentSet concurrentSet) {
-        LEMMAS_CASH = lemmasCash;
+
 
         this.entityCreator = entityCreator;
         this.site = site;
@@ -68,7 +64,6 @@ public class PagesExtractorAction extends RecursiveAction {
         this.httpParserJsoup = httpParserJsoup;
         this.pagesRepository = pagesRepository;
         this.sitesRepository = sitesRepository;
-        this.PAGES_CASH = PAGES_CASH;
         this.thisPool = thisPool;
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
@@ -92,7 +87,7 @@ public class PagesExtractorAction extends RecursiveAction {
                     PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
                             httpParserJsoup, pagesRepository,
                             lemmasRepository, indexRepository,
-                            sitesRepository, PAGES_CASH, LEMMAS_CASH, thisPool, entityCreator, concurrentSet);
+                            sitesRepository, thisPool, entityCreator, concurrentSet);
                     task.fork();
                     taskList.add(task);
 
