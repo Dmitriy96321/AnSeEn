@@ -3,16 +3,13 @@ package searchengine.services.indexing;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
-import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
 import searchengine.dto.indexind.IndexingResponse;
 import searchengine.model.EntityCreator;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
-import searchengine.parser.LemmaParser;
 import searchengine.repositories.IndexesRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
@@ -22,6 +19,7 @@ import searchengine.parser.PagesExtractorAction;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -36,8 +34,6 @@ public class IndexingServiceImpl implements IndexingService {
     private final HttpParserJsoup httpParserJsoup;
     private final List<ForkJoinPool> forkJoinPools;
     private final EntityCreator entityCreator;
-    private final LemmaParser lemmaParser;
-    private final Jedis jedis;
 
 
     @Override
@@ -100,22 +96,28 @@ public class IndexingServiceImpl implements IndexingService {
 
 
     private void addAllSites() {
-        forkJoinPools.clear();
-        log.info("Adding site");
-        sitesRepository.truncateTableSite();
-        pagesRepository.truncateTablePage();
-        lemmasRepository.truncateTableLemma();
-        indexRepository.truncateTableIndexes();
-        jedis.flushAll();
-
+        clearBase();
         sitesList.getSites().forEach(site -> {
             ForkJoinPool pool = new ForkJoinPool();
 
+        long start = System.currentTimeMillis();
+
             pool.execute(new PagesExtractorAction(site, httpParserJsoup,
-                    pagesRepository, sitesRepository,
-                    lemmasRepository, indexRepository,
-                    pool, entityCreator));
+                            pagesRepository, sitesRepository,
+                            lemmasRepository, indexRepository,
+                            pool, entityCreator)
+            );
             forkJoinPools.add(pool);
+
+                        try {
+                            pool.shutdown();
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                long endTime = System.currentTimeMillis();
+                System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
+            } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+
+                        }
         });
     }
 
@@ -130,6 +132,14 @@ public class IndexingServiceImpl implements IndexingService {
              }
          }
          return false;
+    }
+    private void clearBase(){
+        forkJoinPools.clear();
+        log.info("Adding site");
+        sitesRepository.truncateTableSite();
+        pagesRepository.truncateTablePage();
+        lemmasRepository.truncateTableLemma();
+        indexRepository.truncateTableIndexes();
     }
 
 

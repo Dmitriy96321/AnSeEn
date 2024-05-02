@@ -5,11 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
 import searchengine.config.Site;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.PagesRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -71,11 +69,11 @@ public class EntityCreator {
         return lemmaEntity;
     }
 
-    public IndexEntity createIndexEntity(PageEntity pageEntity, LemmaEntity lemmaEntity, Float rank){
+    public IndexEntity createIndexEntity(PageEntity pageEntity, LemmaEntity lemmaEntity, Integer rank){
         IndexEntity indexEntity = new IndexEntity();
         indexEntity.setPageId(pageEntity);
         indexEntity.setLemmaId(lemmaEntity);
-        indexEntity.setRank(rank);
+        indexEntity.setRank(rank.floatValue());
 
         return indexEntity;
     }

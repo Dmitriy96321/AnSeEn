@@ -11,6 +11,9 @@ import searchengine.model.SiteEntity;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
+
+
+
     @Modifying
     @Transactional
     @Query(value = "TRUNCATE TABLE lemma", nativeQuery = true)
