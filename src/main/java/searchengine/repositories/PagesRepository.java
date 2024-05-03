@@ -6,8 +6,11 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
+
+import java.util.List;
 
 @Repository
 public interface PagesRepository extends JpaRepository<PageEntity, Long> {
@@ -31,7 +34,9 @@ public interface PagesRepository extends JpaRepository<PageEntity, Long> {
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM page WHERE id NOT IN (SELECT MIN(id) FROM page GROUP BY path)", nativeQuery = true)
-    void deleteDuplicatePages();
+    public void deleteDuplicatePages();
+
+
 
 
 

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
 
+import java.util.List;
+
 @Repository
 public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
 
@@ -18,27 +20,20 @@ public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
     @Transactional
     @Query(value = "TRUNCATE TABLE lemma", nativeQuery = true)
     void truncateTableLemma();
+    LemmaEntity findByLemma(String lemma);
 
     @Modifying
     @Transactional
     @Query("update LemmaEntity l set l.frequency = :value where l.id = :id")
     void updateLemmaFrequency(@Param("value") Integer value, @Param("id") long id);
 
-//    @Modifying
-//    @Transactional
-    @Query("select l from LemmaEntity l where l.siteId = :siteId AND l.lemma = :lemma" )
-    LemmaEntity findBySiteIdAndAndLemma(@Param("siteId") SiteEntity siteId, @Param("lemma") String lemma);
-//
-//    @Transactional
-//    @Query("SELECT CASE WHEN COUNT(l) > 0 THEN true ELSE false END FROM LemmaEntity l WHERE l.lemma = :lemma")
-//    boolean existsLemmaBySite(@Param("siteId") SiteEntity siteId, @Param("lemma") String lemma);
-
-
-//     save(LemmaEntity lemma);
-
-//    @Transactional
-//    @Query("update LemmaEntity l set l.frequency = :site_id where l.id = :lemma")
-//    void existsLemmaBySite(@Param("site_id") Long site_id, @Param("lemma") String lemma);
+    @Transactional
+    @Query(value = "SELECT l.id, l.site_id, lemma, frequency " +
+            "FROM page " +
+            "JOIN search_engine.indexes i on page.id = i.page_id " +
+            "join search_engine.lemma l on l.id = i.lemma_id " +
+            "WHERE page.id = :page_id", nativeQuery = true)
+    List<LemmaEntity> getLemmasFromPage(@Param("page_id") Long pageId);
 
 
 

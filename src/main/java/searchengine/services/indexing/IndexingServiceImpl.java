@@ -4,12 +4,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
 import searchengine.dto.indexind.IndexingResponse;
-import searchengine.model.EntityCreator;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
+import searchengine.model.*;
 import searchengine.repositories.IndexesRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PagesRepository;
@@ -34,6 +32,7 @@ public class IndexingServiceImpl implements IndexingService {
     private final HttpParserJsoup httpParserJsoup;
     private final List<ForkJoinPool> forkJoinPools;
     private final EntityCreator entityCreator;
+    private final Jedis jedis;
 
 
     @Override
@@ -77,8 +76,14 @@ public class IndexingServiceImpl implements IndexingService {
         PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity );
         PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
         if ( pageEntity != null){
+
+            lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
+                lemma.setFrequency(lemma.getFrequency() - 1);
+            });
+            indexRepository.deleteIndexesByPageId(pageEntity.getId());
             pageEntity.setContent(newPageEntity.getContent());
             pageEntity.setCode(newPageEntity.getCode());
+            createLemmaForPage(pageEntity);
         }else {
             pagesRepository.save(entityCreator.createPageEntity(urlPage, siteEntity));
         }
@@ -86,12 +91,10 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
+    @Transactional
     public void someMethod(Long id) {
-        System.out.println(id);
-        pagesRepository.deleteDuplicatePages();
-//        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
-//        entityCreator.createLemmaForPage(pageEntity).forEach(System.out::println);
-//        lemmaParser.getLemmasForPage(pageEntity).entrySet().forEach(System.out::println);
+        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
+
     }
 
 
@@ -100,24 +103,12 @@ public class IndexingServiceImpl implements IndexingService {
         sitesList.getSites().forEach(site -> {
             ForkJoinPool pool = new ForkJoinPool();
 
-        long start = System.currentTimeMillis();
-
             pool.execute(new PagesExtractorAction(site, httpParserJsoup,
                             pagesRepository, sitesRepository,
                             lemmasRepository, indexRepository,
                             pool, entityCreator)
             );
             forkJoinPools.add(pool);
-
-                        try {
-                            pool.shutdown();
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                long endTime = System.currentTimeMillis();
-                System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
-            } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-
-                        }
         });
     }
 
@@ -140,6 +131,23 @@ public class IndexingServiceImpl implements IndexingService {
         pagesRepository.truncateTablePage();
         lemmasRepository.truncateTableLemma();
         indexRepository.truncateTableIndexes();
+        jedis.flushAll();
+    }
+    @Transactional
+    public void createLemmaForPage(PageEntity pageEntity) {
+        entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency)->{
+            LemmaEntity lemmaEntity = lemmasRepository.findByLemma(lemma);
+            if (lemmaEntity != null) {
+                lemmaEntity.setFrequency(frequency + 1);
+                indexRepository.save(entityCreator.createIndexEntity(pageEntity,lemmaEntity,frequency));
+            } else {
+                lemmaEntity = entityCreator.createLemmaForPage(
+                        sitesRepository.findById(pageEntity.getId()).orElseThrow(), lemma
+                );
+                lemmasRepository.save(lemmaEntity);
+                indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
+            }
+        });
     }
 
 

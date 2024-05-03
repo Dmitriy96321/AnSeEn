@@ -19,8 +19,8 @@ public class LettuceCach {
         commands.del(key.getName());
     }
 
-    public boolean addSet(String value) {
-        return commands.sadd(key.getName(), value) == 1;
+    public boolean addSet(String nameCache,String value) {
+        return commands.sadd(key.getName() + "_" + nameCache, value) == 1;
     }
 
 }
