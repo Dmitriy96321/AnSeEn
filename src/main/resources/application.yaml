@@ -20,28 +20,20 @@ indexing-settings:
 #    - url: https://www.nashe.ru/
 #      name: Наше Радио
 
-#    - url: https://etype.ru/
-#      name: Етайп
-#    - url: https://etype.ru/privacy1
-#      name: Етайп
-#
-#    - url: https://Sendel.ru/
-#      name: Константин Шибков
-    - url: https://trycpt.ru/
+    - url: https://Sendel.ru/
       name: Константин Шибков
 
-    - url: https://nopaper.ru/
-      name: Nopaper
+#
+#    - url: https://nopaper.ru/
+#      name: Nopaper
 
-#    - url: https://www.lenta.ru/
-#      name: Лента.ру
 
-#    - url: https://www.skillbox.ru
-#      name: Skillbox
+
+
 #
 #    - url: https://www.playback.ru/
 #      name: PlayBack.Ru
 connection-config:
   user-agent: AnSeEn/1.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0
   referer: http://www.google.com
-  timeout: 5500
+  timeout: 0
