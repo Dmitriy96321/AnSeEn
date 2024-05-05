@@ -2,7 +2,6 @@ package searchengine.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexind.IndexingResponse;
@@ -32,6 +31,16 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity<IndexingResponse> startIndexing() {
         return ResponseEntity.ok(indexingService.startIndexing());
+    }
+
+    @PostMapping("/indexPage")
+    public ResponseEntity<IndexingResponse> indexPage(String url){
+        return ResponseEntity.ok(indexingService.indexPage(url));
+    }
+
+    @GetMapping("/Page/{id}")
+    void someMethod(@PathVariable Long id){
+        indexingService.someMethod(id);
     }
 
 }

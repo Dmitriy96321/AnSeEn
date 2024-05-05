@@ -28,8 +28,10 @@ public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
     void setStatusTime(@Param("value") LocalDateTime value, @Param("id") long id);
 
     @Modifying
-    @Transactional
     @Query(value = "TRUNCATE TABLE site", nativeQuery = true)
     void truncateTableSite();
 
+
+    @Query(value = "select * from site s where s.url = :siteUrl", nativeQuery = true)
+    SiteEntity findBySiteUrl(@Param("siteUrl") String siteUrl);
 }

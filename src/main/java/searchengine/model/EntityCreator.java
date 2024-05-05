@@ -1,15 +1,19 @@
 package searchengine.model;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import searchengine.config.Site;
-import searchengine.services.indexing.parser.HttpParserJsoup;
+import searchengine.parser.HttpParserJsoup;
+import searchengine.parser.LemmaParser;
+import searchengine.repositories.LemmaRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Component
 @Scope("prototype")
@@ -17,8 +21,10 @@ import java.time.LocalDateTime;
 @Slf4j
 public class EntityCreator {
     private final HttpParserJsoup httpParserJsoup;
+    private final LemmaParser lemmaParser;
+    private final LemmaRepository lemmaRepository;
 
-    public PageEntity createPageEntity(String link, SiteEntity siteEntity) {
+    public  PageEntity createPageEntity(String link, SiteEntity siteEntity) {
         int responseCode;
         PageEntity pageEntity = new PageEntity();
         Connection.Response response = null;
@@ -29,7 +35,7 @@ public class EntityCreator {
             response = httpParserJsoup.getConnect(link).execute();
             responseCode = response.statusCode();
             pageEntity.setCode(responseCode);
-            pageEntity.setContent((responseCode == 200) ? response.parse().toString() :
+            pageEntity.setContent((responseCode == 200) ? response.parse().body().html() :
                     response.statusMessage());
         } catch (IOException e) {
             log.error(e + e.getMessage() + " " + link + " createPageEntity ");
@@ -57,5 +63,30 @@ public class EntityCreator {
         }
         return siteEntity;
     }
+
+    public LemmaEntity createLemmaForPage(SiteEntity site, String lemma){
+        LemmaEntity lemmaEntity = new LemmaEntity();
+        lemmaEntity.setSiteId(site);
+        lemmaEntity.setLemma(lemma);
+        lemmaEntity.setFrequency(1);
+        return lemmaEntity;
+    }
+
+    public IndexEntity createIndexEntity(PageEntity pageEntity, LemmaEntity lemmaEntity, Integer rank){
+        IndexEntity indexEntity = new IndexEntity();
+        indexEntity.setPageId(pageEntity);
+        indexEntity.setLemmaId(lemmaEntity);
+        indexEntity.setRank(rank.floatValue());
+
+        return indexEntity;
+    }
+    public Map<String, Integer> getLemmaForPage(PageEntity pageEntity){
+//        log.info("getLemmaForPage + 1");
+        return lemmaParser.getLemmasForPage(pageEntity);
+    }
+
+
+
+
 
 }
