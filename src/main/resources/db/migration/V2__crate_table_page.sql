@@ -3,7 +3,8 @@ CREATE TABLE page(
                      site_id INT NOT NULL,
                      path TEXT NOT NULL,
                      code INT NOT NULL,
-                     content MEDIUMTEXT NOT NULL
+                     content MEDIUMTEXT NOT NULL,
+--                      CONSTRAINT unique_path UNIQUE (path(30)),
+                     KEY path_key (path(30))
+
 );
-ALTER TABLE page
-    ADD KEY(path(30));

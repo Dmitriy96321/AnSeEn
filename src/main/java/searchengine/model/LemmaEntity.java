@@ -1,20 +1,20 @@
 package searchengine.model;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
 
+@Getter
+@Setter
 @Entity
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "page")
-public class PageEntity implements Serializable {
-
+@AllArgsConstructor
+@Table(name = "lemma")
+public class LemmaEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -24,13 +24,14 @@ public class PageEntity implements Serializable {
     @JoinColumn(name = "site_id")
     private SiteEntity siteId;
 
-    @Column(name = "path")
-    private String path;
 
-    @Column(name = "code")
-    private int code;
+    @Column(name = "lemma")
+    private String lemma;
 
-    @Column(name = "content")
-    private String content;
+    @Column(name = "frequency")
+    private Integer frequency;
+
+
+
 
 }
