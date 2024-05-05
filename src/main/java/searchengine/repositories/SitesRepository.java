@@ -1,8 +1,6 @@
 package searchengine.repositories;
 
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -30,11 +28,10 @@ public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
     void setStatusTime(@Param("value") LocalDateTime value, @Param("id") long id);
 
     @Modifying
-    @Transactional
     @Query(value = "TRUNCATE TABLE site", nativeQuery = true)
     void truncateTableSite();
 
-    @Transactional
+
     @Query(value = "select * from site s where s.url = :siteUrl", nativeQuery = true)
     SiteEntity findBySiteUrl(@Param("siteUrl") String siteUrl);
 }

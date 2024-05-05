@@ -17,7 +17,6 @@ import searchengine.parser.PagesExtractorAction;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 
 
 @Service
@@ -36,6 +35,7 @@ public class IndexingServiceImpl implements IndexingService {
 
 
     @Override
+    @Transactional
     public IndexingResponse startIndexing() {
         log.info("Starting indexing");
         if (!indexingIsStarted()) {
@@ -53,12 +53,12 @@ public class IndexingServiceImpl implements IndexingService {
         if (!forkJoinPools.isEmpty()) {
             sitesList.getSites().forEach(site -> site.setIndexingIsStopped(true));
             forkJoinPools.forEach(ForkJoinPool::shutdownNow);
-                sitesRepository.findAll().forEach(siteEntity -> {
-                    if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
-                        siteEntity.setStatus(StatusType.FAILED);
-                        siteEntity.setLastError("Индексация остановлена пользователем");
-                    }
-                });
+            sitesRepository.findAll().forEach(siteEntity -> {
+                if (siteEntity.getStatus().equals(StatusType.INDEXING)) {
+                    siteEntity.setStatus(StatusType.FAILED);
+                    siteEntity.setLastError("Индексация остановлена пользователем");
+                }
+            });
             return IndexingResponse.builder().result(true).build();
         }
         return IndexingResponse.builder().result(false).error("Нет сайтов на индексации.").build();
@@ -68,24 +68,28 @@ public class IndexingServiceImpl implements IndexingService {
     @Transactional
     public IndexingResponse indexPage(String urlPage) {
         log.info("Indexing page {}", urlPage);
-        SiteEntity siteEntity = sitesRepository.findBySiteUrl(urlPage.substring(0, urlPage.indexOf("/",8)));
+        SiteEntity siteEntity = sitesRepository.findBySiteUrl(urlPage.substring(0, urlPage.indexOf("/", 8)));
         if (siteEntity == null) {
             return IndexingResponse.builder().result(false).error("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n").build();
         }
-        PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity );
-        PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
-        if ( pageEntity != null){
 
+        PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity);
+        PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
+        if (pageEntity != null) {
             lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
                 lemma.setFrequency(lemma.getFrequency() - 1);
             });
             indexRepository.deleteIndexesByPageId(pageEntity.getId());
+
             pageEntity.setContent(newPageEntity.getContent());
             pageEntity.setCode(newPageEntity.getCode());
+
             createLemmaForPage(pageEntity);
-        }else {
-            pagesRepository.save(entityCreator.createPageEntity(urlPage, siteEntity));
+
+        } else {
+            pagesRepository.save(newPageEntity);
+            createLemmaForPage(newPageEntity);
         }
         return IndexingResponse.builder().result(true).build();
     }
@@ -94,7 +98,11 @@ public class IndexingServiceImpl implements IndexingService {
     @Transactional
     public void someMethod(Long id) {
         PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
-
+        lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
+            lemma.setFrequency(lemma.getFrequency() - 1);
+        });
+        indexRepository.deleteIndexesByPageId(pageEntity.getId());
+        pagesRepository.delete(pageEntity);
     }
 
 
@@ -104,9 +112,9 @@ public class IndexingServiceImpl implements IndexingService {
             ForkJoinPool pool = new ForkJoinPool();
 
             pool.execute(new PagesExtractorAction(site, httpParserJsoup,
-                            pagesRepository, sitesRepository,
-                            lemmasRepository, indexRepository,
-                            pool, entityCreator)
+                    pagesRepository, sitesRepository,
+                    lemmasRepository, indexRepository,
+                    pool, entityCreator)
             );
             forkJoinPools.add(pool);
         });
@@ -117,14 +125,15 @@ public class IndexingServiceImpl implements IndexingService {
         if (forkJoinPools.isEmpty()) {
             return false;
         }
-         for (ForkJoinPool pool : forkJoinPools) {
-             if (pool.getActiveThreadCount() > 0) {
-                 return true;
-             }
-         }
-         return false;
+        for (ForkJoinPool pool : forkJoinPools) {
+            if (pool.getActiveThreadCount() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
-    private void clearBase(){
+
+    private void clearBase() {
         forkJoinPools.clear();
         log.info("Adding site");
         sitesRepository.truncateTableSite();
@@ -133,13 +142,13 @@ public class IndexingServiceImpl implements IndexingService {
         indexRepository.truncateTableIndexes();
         jedis.flushAll();
     }
-    @Transactional
-    public void createLemmaForPage(PageEntity pageEntity) {
-        entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency)->{
+
+    private void createLemmaForPage(PageEntity pageEntity) {
+        entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
             LemmaEntity lemmaEntity = lemmasRepository.findByLemma(lemma);
             if (lemmaEntity != null) {
                 lemmaEntity.setFrequency(frequency + 1);
-                indexRepository.save(entityCreator.createIndexEntity(pageEntity,lemmaEntity,frequency));
+                indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 lemmaEntity = entityCreator.createLemmaForPage(
                         sitesRepository.findById(pageEntity.getId()).orElseThrow(), lemma
@@ -149,6 +158,5 @@ public class IndexingServiceImpl implements IndexingService {
             }
         });
     }
-
 
 }

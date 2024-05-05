@@ -1,7 +1,5 @@
 package searchengine.parser;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -9,7 +7,6 @@ import org.jsoup.Jsoup;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import searchengine.config.ClientConfig;
-import searchengine.model.LemmaEntity;
 
 import java.io.IOException;
 import java.util.Set;

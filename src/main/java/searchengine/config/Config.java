@@ -1,7 +1,6 @@
 package searchengine.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.context.annotation.Bean;

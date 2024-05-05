@@ -1,7 +1,6 @@
 package searchengine.services.indexing;
 
 
-import org.springframework.web.bind.annotation.PathVariable;
 import searchengine.dto.indexind.IndexingResponse;
 
 public interface IndexingService  {

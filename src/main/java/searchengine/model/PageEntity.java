@@ -1,7 +1,10 @@
 package searchengine.model;
 
+
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -30,13 +33,4 @@ public class PageEntity implements Serializable {
     @Column(name = "content")
     private String content;
 
-    @Override
-    public String toString() {
-        return "PageEntity{" +
-                "code=" + code +
-                ", path='" + path + '\'' +
-                ", siteId=" + siteId +
-                ", id=" + id +
-                '}';
-    }
 }

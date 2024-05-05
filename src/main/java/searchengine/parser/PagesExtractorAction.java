@@ -1,7 +1,6 @@
 package searchengine.parser;
 
 
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import searchengine.config.LettuceCach;
 import searchengine.config.Site;

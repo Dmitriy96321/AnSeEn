@@ -2,11 +2,8 @@ package searchengine.config;
 
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.sync.RedisCommands;
-import searchengine.model.LemmaEntity;
 import searchengine.model.SiteEntity;
-import searchengine.parser.HttpParserJsoup;
 
-import java.util.Set;
 
 public class LettuceCach {
     private final RedisCommands<String, String> commands;
