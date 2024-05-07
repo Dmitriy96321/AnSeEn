@@ -29,6 +29,7 @@ public class PagesExtractorAction extends RecursiveAction {
     private final EntityCreator entityCreator;
     private final LettuceCach lettuceCach;
     private  Map<String,LemmaEntity> lemmasCache;
+    private List<IndexEntity> indexEntities;
     private final boolean isFirst;
     long start = System.currentTimeMillis();
 
@@ -51,6 +52,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lettuceCach = new LettuceCach(siteEntity);
         this.lemmasCache =  new ConcurrentHashMap<>();
         this.isFirst = true;
+        this.indexEntities = new ArrayList<>();
     }
 
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
@@ -72,6 +74,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lettuceCach = lettuceCach;
         this.lemmasCache = lemmasCache;
         this.isFirst = false;
+        this.indexEntities = new ArrayList<>();
     }
 
     @Override
@@ -87,19 +90,20 @@ public class PagesExtractorAction extends RecursiveAction {
                 if (lettuceCach.addSet("pages", link)) {
                     PageEntity pageEntity = entityCreator.createPageEntity(link,siteEntity);
                     pagesRepository.save(pageEntity);
-
                     saveLemmas(pageEntity);
                     saveTime();
                     PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
                             httpParserJsoup, pagesRepository,
                             lemmasRepository, indexRepository,
                             sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
+
                     task.fork();
                     taskList.add(task);
 
                 }
 
         }
+        indexRepository.saveAll(indexEntities);
         for (PagesExtractorAction task : taskList) {
             task.join();
         }
@@ -123,7 +127,6 @@ public class PagesExtractorAction extends RecursiveAction {
 
 
     public void saveLemmas(PageEntity pageEntity) {
-        List<IndexEntity> indexEntityList = new ArrayList<>();
         List<LemmaEntity> newLemmasEntityList = new ArrayList<>();
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
             if (site.isIndexingIsStopped()) {
@@ -133,15 +136,14 @@ public class PagesExtractorAction extends RecursiveAction {
                 LemmaEntity lemmaEntity = entityCreator.createLemmaForPage(siteEntity, lemma);
                 lemmasCache.put(lemma, lemmaEntity);
                 newLemmasEntityList.add(lemmaEntity);
-                indexEntityList.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
+                indexEntities.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 LemmaEntity lemmaEntity = lemmasCache.get(lemma);
-                indexEntityList.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
+                indexEntities.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
                 lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
                 lemmasCache.put(lemma, lemmaEntity);
             }
         });
         lemmasRepository.saveAll(newLemmasEntityList);
-        indexRepository.saveAll(indexEntityList);
     }
 }
