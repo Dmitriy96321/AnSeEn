@@ -16,6 +16,7 @@ import java.util.concurrent.*;
 
 @Slf4j
 public class PagesExtractorAction extends RecursiveAction {
+    private int COUNT_FLOW;
 
     private Site site;
     private SiteEntity siteEntity;
@@ -53,6 +54,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lemmasCache =  new ConcurrentHashMap<>();
         this.isFirst = true;
         this.indexEntities = new ArrayList<>();
+
     }
 
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
@@ -79,6 +81,8 @@ public class PagesExtractorAction extends RecursiveAction {
 
     @Override
     protected void compute() {
+        COUNT_FLOW++;
+        System.out.println(Thread.currentThread() + " open flow -" + COUNT_FLOW );
 
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
@@ -88,8 +92,24 @@ public class PagesExtractorAction extends RecursiveAction {
                 return;
             }
                 if (lettuceCach.addSet("pages", link)) {
-                    PageEntity pageEntity = entityCreator.createPageEntity(link,siteEntity);
-                    pagesRepository.save(pageEntity);
+                    PageEntity pageEntity = null;
+                    int count = 3;
+                    while (0 < count){
+                        try {
+                            pageEntity = entityCreator.createPageEntity(link,siteEntity);
+                            pagesRepository.save(pageEntity);
+                            count = 0;
+                        } catch (Exception e) {
+                            log.error(e.getMessage() + " " + count);
+                            count--;
+                        }
+                    }
+                    if (pageEntity.getId() == null || pageEntity.getContent() == null){
+
+                        log.error("Error: create page entity failed for " + link );
+                        continue;
+                    }
+
                     saveLemmas(pageEntity);
                     saveTime();
                     PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
@@ -117,6 +137,8 @@ public class PagesExtractorAction extends RecursiveAction {
             System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
 
         }
+        COUNT_FLOW--;
+        System.out.println(Thread.currentThread() + " closed flow -" + COUNT_FLOW );
     }
     private void saveTime(){
         LocalDateTime time = LocalDateTime.now();
@@ -129,7 +151,7 @@ public class PagesExtractorAction extends RecursiveAction {
     public void saveLemmas(PageEntity pageEntity) {
         List<LemmaEntity> newLemmasEntityList = new ArrayList<>();
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
-            if (site.isIndexingIsStopped()) {
+            if (site.isIndexingIsStopped() || pageEntity.getCode() != 200) {
                 return;
             }
             if (lettuceCach.addSet("lemma", lemma)) {

@@ -33,5 +33,14 @@ public class PageEntity implements Serializable {
     @Column(name = "content")
     private String content;
 
+    @Override
+    public String toString() {
+        return "PageEntity{" +
 
+                "code=" + code +
+                ", path='" + path + '\'' +
+                ", siteId=" + siteId +
+                ", id=" + id +
+                '}';
+    }
 }

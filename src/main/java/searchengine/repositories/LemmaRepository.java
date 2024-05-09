@@ -16,6 +16,8 @@ public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
 
     @Modifying
     @Query(value = "TRUNCATE TABLE lemma", nativeQuery = true)
+
+
     void truncateTableLemma();
     LemmaEntity findByLemma(String lemma);
 

@@ -13,22 +13,28 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: none
-    show-sql: true
+    show-sql: false
 
 indexing-settings:
   sites:
 #    - url: https://www.nashe.ru/
 #      name: Наше Радио
 
-    - url: https://Sendel.ru/
-      name: Константин Шибков
+#    - url: https://Sendel.ru/
+#      name: Константин Шибков
 
 #
 #    - url: https://nopaper.ru/
 #      name: Nopaper
 
+    - url: https://volochek.life/
+      name: Волчёк
 
+#    - url: http://radiomv.ru/
+#      name: Радиомов
 
+#    - url:
+#      name:
 
 #
 #    - url: https://www.playback.ru/

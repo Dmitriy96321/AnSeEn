@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexind.IndexingResponse;
+import searchengine.dto.search.SearchResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.indexing.IndexingService;
+import searchengine.services.search.SearchService;
 import searchengine.services.statistics.StatisticsService;
 
 @RestController
@@ -17,6 +19,7 @@ public class ApiController {
 
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
+    private final SearchService searchService;
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -41,6 +44,11 @@ public class ApiController {
     @GetMapping("/Page/{id}")
     void someMethod(@PathVariable Long id){
         indexingService.someMethod(id);
+    }
+
+    @GetMapping("/search")
+    ResponseEntity<SearchResponse> search(@RequestParam String query){
+        return ResponseEntity.ok(searchService.search(query));
     }
 
 }

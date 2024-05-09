@@ -76,7 +76,9 @@ public class IndexingServiceImpl implements IndexingService {
 
         PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity);
         PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
+
         if (pageEntity != null) {
+            log.info(pageEntity.toString());
             lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
                 lemma.setFrequency(lemma.getFrequency() - 1);
             });
@@ -88,7 +90,9 @@ public class IndexingServiceImpl implements IndexingService {
             createLemmaForPage(pageEntity);
 
         } else {
+
             pagesRepository.save(newPageEntity);
+            log.info(newPageEntity.toString());
             createLemmaForPage(newPageEntity);
         }
         return IndexingResponse.builder().result(true).build();
@@ -146,12 +150,13 @@ public class IndexingServiceImpl implements IndexingService {
     private void createLemmaForPage(PageEntity pageEntity) {
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
             LemmaEntity lemmaEntity = lemmasRepository.findByLemma(lemma);
+            log.info( lemma + " Adding lemma {}", lemmaEntity);
             if (lemmaEntity != null) {
                 lemmaEntity.setFrequency(frequency + 1);
                 indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 lemmaEntity = entityCreator.createLemmaForPage(
-                        sitesRepository.findById(pageEntity.getId()).orElseThrow(), lemma
+                        sitesRepository.findById(pageEntity.getSiteId().getId()).orElseThrow(), lemma
                 );
                 lemmasRepository.save(lemmaEntity);
                 indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
