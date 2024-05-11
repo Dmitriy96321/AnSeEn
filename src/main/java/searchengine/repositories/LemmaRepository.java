@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import searchengine.model.LemmaEntity;
+import searchengine.model.SiteEntity;
 
 import java.util.List;
 
@@ -31,5 +32,5 @@ public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
     List<LemmaEntity> getLemmasFromPage(@Param("page_id") Long pageId);
 
 
-
+    LemmaEntity findByLemmaAndSiteId(String lemma, SiteEntity siteId);
 }

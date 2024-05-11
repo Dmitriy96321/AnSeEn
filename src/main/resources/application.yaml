@@ -20,15 +20,15 @@ indexing-settings:
 #    - url: https://www.nashe.ru/
 #      name: Наше Радио
 
-#    - url: https://Sendel.ru/
-#      name: Константин Шибков
+    - url: https://Sendel.ru
+      name: Константин Шибков
 
 #
-#    - url: https://nopaper.ru/
-#      name: Nopaper
+    - url: https://nopaper.ru/
+      name: Nopaper
 
-    - url: https://volochek.life/
-      name: Волчёк
+#    - url: https://volochek.life
+#      name: Волчёк
 
 #    - url: http://radiomv.ru/
 #      name: Радиомов

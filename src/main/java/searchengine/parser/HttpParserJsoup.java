@@ -32,6 +32,7 @@ public class HttpParserJsoup implements HttpParser {
     @Override
     public Set<String> extractLinks(String url) {
         Set<String> links = null;
+//        System.out.println(url);
         try {
 
             links = getConnect(url).get()
@@ -39,12 +40,15 @@ public class HttpParserJsoup implements HttpParser {
                     .stream()
                     .map(link -> link.attr("href"))
                     .filter(href -> (href.contains(url.replaceAll("^(.*?\\/\\/[^\\/]+\\/).*", "$1"))
-                            || (href.startsWith("/") && href.length() > 4)) && (!href.contains(".jpg")))
+                                || (href.startsWith("/") && href.length() > 4)) && (!href.contains(".jpg")))
                     .collect(Collectors.toSet())
                     .stream()
                     .map(href -> {
                         if (href.startsWith("/")) {
-                            return url.substring(0, url.indexOf("/", 8)) + href;
+                            if (url.length() - url.replaceAll("/","").length()>2){
+                                return url.substring(0, url.indexOf("/", 8)) + href;
+                            }
+                            return url + href;
                         }
                         return href;
                     })

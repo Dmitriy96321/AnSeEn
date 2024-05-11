@@ -20,14 +20,27 @@ public class LemmaParser {
     private final LuceneMorphology luceneMorph;
 
 
+    public List<String> getLemmasFromQuery(String query) {
+        Set<String> lemmas = new HashSet<>();
+        splitTextIntoWords(query).stream()
+                .filter(words -> !words.isEmpty())
+                .map(luceneMorph::getNormalForms).forEach(wordForms -> {
+                    if (isNotFunctionalPartSpeech(luceneMorph.getMorphInfo(wordForms.get(0)).toString())){
+                        lemmas.add(wordForms.get(0));
+                    }
+                });
+        return lemmas.stream().toList();
+    }
+
+
     public Map<String, Integer> getLemmasForPage(PageEntity pageEntity) {
         String text = Jsoup.parse(pageEntity.getContent()).text();
         Map<String, Integer> map = new HashMap<>();
         splitTextIntoWords(Jsoup.parse(text).text()).stream()
                 .filter(words -> !words.isEmpty())
-                .map(luceneMorph::getNormalForms).forEach(wordFrms -> {
-                    if (isNotFunctionalPartSpeech(luceneMorph.getMorphInfo(wordFrms.get(0)).toString())) {
-                        map.merge(wordFrms.get(0), 1, Integer::sum);
+                .map(luceneMorph::getNormalForms).forEach(wordForms -> {
+                    if (isNotFunctionalPartSpeech(luceneMorph.getMorphInfo(wordForms.get(0)).toString())) {
+                        map.merge(wordForms.get(0), 1, Integer::sum);
                     }
                 });
         return map;
@@ -41,6 +54,7 @@ public class LemmaParser {
                 .toLowerCase().split(" ")
         ).toList();
     }
+
 
     private boolean isNotFunctionalPartSpeech(String text) {
         AtomicBoolean out = new AtomicBoolean(false);

@@ -44,7 +44,9 @@ public class EntityCreator {
     public SiteEntity createSiteEntity(Site site) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setName(site.getName());
-        siteEntity.setUrl(site.getUrl().substring(0, site.getUrl().length() - 1));
+        siteEntity.setUrl(site.getUrl()
+//                .substring(0, site.getUrl().length() - 1)
+        );
         siteEntity.setStatusTime(LocalDateTime.now());
 
         try {
