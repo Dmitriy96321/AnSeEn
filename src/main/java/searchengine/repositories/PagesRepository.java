@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 
+import java.util.List;
+
 
 @Repository
 public interface PagesRepository extends JpaRepository<PageEntity, Long> {
@@ -22,6 +24,13 @@ public interface PagesRepository extends JpaRepository<PageEntity, Long> {
     PageEntity findByPageUrl(@Param("path") String path);
 
     Integer countBySiteId(SiteEntity site);
+
+    @Query(value = "SELECT page.id, page.site_id, path, code, content " +
+            "FROM page " +
+            "JOIN search_engine.indexes i on page.id = i.page_id " +
+            "join search_engine.lemma l on l.id = i.lemma_id " +
+            "WHERE l.id = :lemma_id", nativeQuery = true)
+    List<PageEntity> findByLemma(@Param("lemma_id")Long lemmaId);
 
 
 
