@@ -40,18 +40,23 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private SearchResponse buildSearchResponse(String site, String query) {
-        List<SearchResult> resultList = new ArrayList<>();
 
-        getPagesEntityFromQuery(site, query).forEach(page-> resultList.add(
-                    SearchResult.builder()
-                            .site(page.getSiteId().getUrl())
-                            .siteName(page.getSiteId().getName())
-                            .uri(page.getPath())
-                            .title(Jsoup.parse(page.getContent()).title())
-                            .snippet("какой-то сниппет")
-                            .relevance(0)
-                            .build())
+        List<SearchResult> resultList = getPagesEntityFromQuery(site, query);
+        float maxAbsolutRelevance = resultList.stream()
+                .map(SearchResult::getRelevance)
+                .max(Float::compareTo)
+                .orElse(0f);
+
+        resultList.forEach(searchResult -> {
+            searchResult.setSnippet(getSnippet(searchResult, query));
+            searchResult.setRelevance(searchResult.getRelevance() / maxAbsolutRelevance);
+                }
         );
+        resultList.sort(Comparator.comparing(SearchResult::getRelevance).reversed());
+
+
+
+
 
         if (resultList.isEmpty()) {
             return SearchResponse.builder().result(false).error("Ничего не найдено").build();
@@ -61,9 +66,9 @@ public class SearchServiceImpl implements SearchService {
     }
 
 
-    private List<PageEntity> getPagesEntityFromQuery(String site,String query){
+    private List<SearchResult> getPagesEntityFromQuery(String site,String query){
 
-        List<PageEntity> listPageEntityFromSiteMap = new ArrayList<>();
+        List<SearchResult> listPageEntityFromSiteMap = new ArrayList<>();
 
         getLemmaEntityList(site,query).forEach((siteEntity, lemmaEntityList) -> {
             List<PageEntity> list = new ArrayList<>();
@@ -85,11 +90,25 @@ public class SearchServiceImpl implements SearchService {
 
             }
 
-            listPageEntityFromSiteMap.addAll(list);
+            listPageEntityFromSiteMap.addAll(list.stream().map(pageEntity -> {
+                float relevance = 0;
+                for (LemmaEntity lemmaEntity : lemmaEntityList) {
+                    relevance = relevance + indexesRepository.findByPageIdAndLemmaId(pageEntity, lemmaEntity).getRank();
+                }
+                return SearchResult.builder()
+                        .site(pageEntity.getSiteId().getUrl())
+                        .siteName(pageEntity.getSiteId().getName())
+                        .uri(pageEntity.getPath())
+                        .title(Jsoup.parse(pageEntity.getContent()).title())
+
+                        .relevance(relevance)
+                        .build();
+            }).toList());
         });
 
         return listPageEntityFromSiteMap;
     }
+
 
 
     private Map<SiteEntity, List<LemmaEntity>> getLemmaEntityList(String site,String query) {
@@ -128,7 +147,72 @@ public class SearchServiceImpl implements SearchService {
         return list;
     }
 
+    private String getSnippet(SearchResult result, String query){
+        log.info(result.getUri());
+        log.info(lemmaParser.getLemmasFromQuery(query)+"");
+        PageEntity page = pagesRepository.findByPagePath(result.getUri(),
+                sitesRepository.findBySiteUrl(result.getSite()).getId());
+        String search = Jsoup.parse(page.getContent()).body().text();
+        StringBuilder snippet = new StringBuilder();
+        log.info("{}", search.contains(query));
+        if (search.contains(query)){
+
+            int index = search.indexOf(query);
+            if(index !=-1){
+
+                int wordStart = Math.max(index - 40, 0);
+                int wordEnd = Math.min(index + query.length() + 40, search.length());
+                String extractedText = search.substring(wordStart, wordEnd);
+                System.out.println("Извлеченный текст: " + extractedText);
+                snippet.append("...").append(extractedText).append("...\n");
+
+            }else{
+                if(search.startsWith(query)){
+
+                    String extractedText = search.substring(0, Math.min(query.length() + 20, search.length()));
+                    System.out.println("Извлеченный текст: "+extractedText);
+                    snippet.append("...").append(extractedText).append("...\n");
 
 
+                }
+            }
+            return snippet.toString();
+        }
+
+//        query.split(" ")
+
+        for (String lemma: lemmaParser.getLemmasFromQuery(query)){
+            log.info(page.getSiteId().getName() + " " + lemma + " " + page.getSiteId().getUrl()+page.getPath());
+            if(search.contains(lemma)) {
+                int index = search.indexOf(lemma);
+                if(index !=-1){
+
+                    int wordStart = Math.max(index - 40, 0);
+                    int wordEnd = Math.min(index + lemma.length() + 40, search.length());
+                    String extractedText = search.substring(wordStart, wordEnd);
+                    System.out.println("Извлеченный текст: "+extractedText);
+                    snippet.append("...").append(extractedText).append("...\n");
+
+                }else{
+                    if(search.startsWith(lemma)){
+
+                        String extractedText = search.substring(0, Math.min(lemma.length() + 20, search.length()));
+                        System.out.println("Извлеченный текст: "+extractedText);
+                        snippet.append("...").append(extractedText).append("...\n");
+
+
+                    }
+                }
+            } else {
+                System.out.println("Слово '" + lemma + "' не найдено в тексте");
+            }
+        }
+
+        System.out.println(page);
+
+
+        return snippet.toString();
+    }
 
 }
+

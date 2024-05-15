@@ -12,4 +12,16 @@ public class SearchResult {
     private String title;
     private String snippet;
     private float relevance;
+
+    @Override
+    public String toString() {
+        return "SearchResult{" +
+                "site='" + site + '\'' +
+                ", siteName='" + siteName + '\'' +
+                ", uri='" + uri + '\'' +
+                ", title='" + title + '\'' +
+                ", snippet='" + snippet + '\'' +
+                ", relevance=" + relevance +
+                '}';
+    }
 }

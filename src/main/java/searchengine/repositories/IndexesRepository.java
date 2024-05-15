@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import searchengine.model.IndexEntity;
+import searchengine.model.LemmaEntity;
+import searchengine.model.PageEntity;
 
 import java.util.List;
 
 @Repository
 public interface IndexesRepository extends JpaRepository<IndexEntity, Long> {
+    IndexEntity findByPageIdAndLemmaId(PageEntity pageId, LemmaEntity lemmaId);
 
 
     @Modifying

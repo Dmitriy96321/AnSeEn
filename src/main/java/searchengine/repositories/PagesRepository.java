@@ -15,13 +15,16 @@ import java.util.List;
 public interface PagesRepository extends JpaRepository<PageEntity, Long> {
 
 
+
+
     @Modifying
     @Query(value = "TRUNCATE TABLE page", nativeQuery = true)
     void truncateTablePage();
 
 
-    @Query(value = "select * from page p where p.path = :path", nativeQuery = true)
-    PageEntity findByPageUrl(@Param("path") String path);
+    @Query(value = "select * from page p where p.path = :path and p.site_id = :site"
+            , nativeQuery = true)
+    PageEntity findByPagePath(@Param("path") String path, @Param("site") Long siteId);
 
     Integer countBySiteId(SiteEntity site);
 
