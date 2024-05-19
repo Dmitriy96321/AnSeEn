@@ -20,12 +20,12 @@ indexing-settings:
 #    - url: https://www.nashe.ru
 #      name: Наше Радио
 
-    - url: https://Sendel.ru
-      name: Константин Шибков
+#    - url: https://Sendel.ru
+#      name: Константин Шибков
 
 #
-    - url: https://nopaper.ru
-      name: Nopaper
+#    - url: https://nopaper.ru
+#      name: Nopaper
 
 #    - url: https://volochek.life
 #      name: Волчёк
@@ -37,8 +37,8 @@ indexing-settings:
 #      name:
 
 #
-#    - url: https://www.playback.ru
-#      name: PlayBack.Ru
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
 connection-config:
   user-agent: AnSeEn/1.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0
   referer: http://www.google.com

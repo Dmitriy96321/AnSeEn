@@ -16,7 +16,7 @@ import java.util.concurrent.*;
 
 @Slf4j
 public class PagesExtractorAction extends RecursiveAction {
-    private int COUNT_FLOW;
+
 
     private Site site;
     private SiteEntity siteEntity;
@@ -81,8 +81,6 @@ public class PagesExtractorAction extends RecursiveAction {
 
     @Override
     protected void compute() {
-        COUNT_FLOW++;
-        System.out.println(Thread.currentThread() + " open flow -" + COUNT_FLOW );
 
         Set<PagesExtractorAction> taskList = new HashSet<>();
         Set<String> links = httpParserJsoup.extractLinks(url);
@@ -91,36 +89,35 @@ public class PagesExtractorAction extends RecursiveAction {
             if (site.isIndexingIsStopped()) {
                 return;
             }
-                if (lettuceCach.addSet("pages", link)) {
-                    PageEntity pageEntity = null;
-                    int count = 3;
-                    while (0 < count){
-                        try {
-                            pageEntity = entityCreator.createPageEntity(link,siteEntity);
-                            pagesRepository.save(pageEntity);
-                            count = 0;
-                        } catch (Exception e) {
-                            log.error(e.getMessage() + " " + count);
-                            count--;
-                        }
+            if (lettuceCach.addSet("pages", link)) {
+                PageEntity pageEntity = null;
+                int count = 3;
+                while (0 < count) {
+                    try {
+                        pageEntity = entityCreator.createPageEntity(link, siteEntity);
+                        pagesRepository.save(pageEntity);
+                        count = 0;
+                    } catch (Exception e) {
+                        log.error(e.getMessage() + " " + count);
+                        count--;
                     }
-                    if (pageEntity.getId() == null || pageEntity.getContent() == null){
-
-                        log.error("Error: create page entity failed for " + link );
-                        continue;
-                    }
-
-                    saveLemmas(pageEntity);
-                    saveTime();
-                    PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
-                            httpParserJsoup, pagesRepository,
-                            lemmasRepository, indexRepository,
-                            sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
-
-                    task.fork();
-                    taskList.add(task);
-
                 }
+                if (pageEntity.getId() == null || pageEntity.getContent() == null) {
+                    log.error("Error: create page entity failed for " + link);
+                    continue;
+                }
+
+                saveLemmas(pageEntity);
+                saveTime();
+                PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
+                        httpParserJsoup, pagesRepository,
+                        lemmasRepository, indexRepository,
+                        sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
+
+                task.fork();
+                taskList.add(task);
+
+            }
 
         }
         indexRepository.saveAll(indexEntities);
@@ -137,8 +134,7 @@ public class PagesExtractorAction extends RecursiveAction {
             System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
 
         }
-        COUNT_FLOW--;
-        System.out.println(Thread.currentThread() + " closed flow -" + COUNT_FLOW );
+
     }
     private void saveTime(){
         LocalDateTime time = LocalDateTime.now();
