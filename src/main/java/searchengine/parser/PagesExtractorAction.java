@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 @Slf4j
 public class PagesExtractorAction extends RecursiveAction {
 
+
     private Site site;
     private SiteEntity siteEntity;
     private String url;
@@ -29,6 +30,7 @@ public class PagesExtractorAction extends RecursiveAction {
     private final EntityCreator entityCreator;
     private final LettuceCach lettuceCach;
     private  Map<String,LemmaEntity> lemmasCache;
+    private List<IndexEntity> indexEntities;
     private final boolean isFirst;
     long start = System.currentTimeMillis();
 
@@ -51,6 +53,8 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lettuceCach = new LettuceCach(siteEntity);
         this.lemmasCache =  new ConcurrentHashMap<>();
         this.isFirst = true;
+        this.indexEntities = new ArrayList<>();
+
     }
 
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
@@ -72,6 +76,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lettuceCach = lettuceCach;
         this.lemmasCache = lemmasCache;
         this.isFirst = false;
+        this.indexEntities = new ArrayList<>();
     }
 
     @Override
@@ -82,30 +87,50 @@ public class PagesExtractorAction extends RecursiveAction {
 
         for (String link : links) {
             if (site.isIndexingIsStopped()) {
+                indexRepository.saveAll(indexEntities);
+                lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
                 return;
             }
-                if (lettuceCach.addSet("pages", link)) {
-                    PageEntity pageEntity = entityCreator.createPageEntity(link,siteEntity);
-                    pagesRepository.save(pageEntity);
-
-                    saveLemmas(pageEntity);
-                    saveTime();
-                    PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
-                            httpParserJsoup, pagesRepository,
-                            lemmasRepository, indexRepository,
-                            sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
-                    task.fork();
-                    taskList.add(task);
-
+            if (lettuceCach.addSet("pages", link)) {
+                PageEntity pageEntity = null;
+                int count = 3;
+                while (0 < count) {
+                    try {
+                        pageEntity = entityCreator.createPageEntity(link, siteEntity);
+                        pagesRepository.save(pageEntity);
+                        count = 0;
+                    } catch (Exception e) {
+                        log.error(e.getMessage() + " " + count);
+                        count--;
+                    }
                 }
 
+                if (pageEntity.getId() == null || pageEntity.getContent() == null) {
+                    log.error("Error: create page entity failed for " + link);
+                    continue;
+                }
+
+                saveLemmas(pageEntity);
+                saveTime();
+                PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
+                        httpParserJsoup, pagesRepository,
+                        lemmasRepository, indexRepository,
+                        sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
+
+                task.fork();
+                taskList.add(task);
+
+            }
+
         }
+        indexRepository.saveAll(indexEntities);
         for (PagesExtractorAction task : taskList) {
             task.join();
         }
 
         if (!site.isIndexingIsStopped() && isFirst) {
             siteEntity.setStatus(StatusType.INDEXED);
+            siteEntity.setLastError("");
             sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
             lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
             long endTime = System.currentTimeMillis();
@@ -113,35 +138,33 @@ public class PagesExtractorAction extends RecursiveAction {
             System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
 
         }
+
     }
     private void saveTime(){
         LocalDateTime time = LocalDateTime.now();
         siteEntity.setStatusTime(time);
         sitesRepository.setStatusTime(time, siteEntity.getId());
-
     }
 
 
     public void saveLemmas(PageEntity pageEntity) {
-        List<IndexEntity> indexEntityList = new ArrayList<>();
         List<LemmaEntity> newLemmasEntityList = new ArrayList<>();
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
-            if (site.isIndexingIsStopped()) {
+            if (site.isIndexingIsStopped() || pageEntity.getCode() != 200) {
                 return;
             }
             if (lettuceCach.addSet("lemma", lemma)) {
                 LemmaEntity lemmaEntity = entityCreator.createLemmaForPage(siteEntity, lemma);
                 lemmasCache.put(lemma, lemmaEntity);
                 newLemmasEntityList.add(lemmaEntity);
-                indexEntityList.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
+                indexEntities.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 LemmaEntity lemmaEntity = lemmasCache.get(lemma);
-                indexEntityList.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
+                indexEntities.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
                 lemmaEntity.setFrequency(lemmaEntity.getFrequency() + 1);
                 lemmasCache.put(lemma, lemmaEntity);
             }
         });
         lemmasRepository.saveAll(newLemmasEntityList);
-        indexRepository.saveAll(indexEntityList);
     }
 }

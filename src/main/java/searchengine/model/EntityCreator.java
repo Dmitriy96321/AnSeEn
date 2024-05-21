@@ -1,6 +1,5 @@
 package searchengine.model;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Component;
 import searchengine.config.Site;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.LemmaRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -22,7 +20,6 @@ import java.util.Map;
 public class EntityCreator {
     private final HttpParserJsoup httpParserJsoup;
     private final LemmaParser lemmaParser;
-    private final LemmaRepository lemmaRepository;
 
     public  PageEntity createPageEntity(String link, SiteEntity siteEntity) {
         int responseCode;
@@ -35,7 +32,7 @@ public class EntityCreator {
             response = httpParserJsoup.getConnect(link).execute();
             responseCode = response.statusCode();
             pageEntity.setCode(responseCode);
-            pageEntity.setContent((responseCode == 200) ? response.parse().body().html() :
+            pageEntity.setContent((responseCode == 200) ? response.parse().body().text() :
                     response.statusMessage());
         } catch (IOException e) {
             log.error(e + e.getMessage() + " " + link + " createPageEntity ");
@@ -47,7 +44,7 @@ public class EntityCreator {
     public SiteEntity createSiteEntity(Site site) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setName(site.getName());
-        siteEntity.setUrl(site.getUrl().substring(0, site.getUrl().length() - 1));
+        siteEntity.setUrl(site.getUrl());
         siteEntity.setStatusTime(LocalDateTime.now());
 
         try {
@@ -81,12 +78,6 @@ public class EntityCreator {
         return indexEntity;
     }
     public Map<String, Integer> getLemmaForPage(PageEntity pageEntity){
-//        log.info("getLemmaForPage + 1");
         return lemmaParser.getLemmasForPage(pageEntity);
     }
-
-
-
-
-
 }

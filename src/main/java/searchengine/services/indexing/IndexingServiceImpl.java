@@ -3,6 +3,7 @@ package searchengine.services.indexing;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
@@ -23,6 +24,7 @@ import java.util.concurrent.ForkJoinPool;
 @RequiredArgsConstructor
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
+
     private final SitesRepository sitesRepository;
     private final PagesRepository pagesRepository;
     private final LemmaRepository lemmasRepository;
@@ -75,8 +77,10 @@ public class IndexingServiceImpl implements IndexingService {
         }
 
         PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity);
-        PageEntity pageEntity = pagesRepository.findByPageUrl(newPageEntity.getPath());
+        PageEntity pageEntity = pagesRepository.findByPagePath(newPageEntity.getPath(),siteEntity.getId());
+
         if (pageEntity != null) {
+            log.info(pageEntity.toString());
             lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
                 lemma.setFrequency(lemma.getFrequency() - 1);
             });
@@ -88,21 +92,12 @@ public class IndexingServiceImpl implements IndexingService {
             createLemmaForPage(pageEntity);
 
         } else {
+
             pagesRepository.save(newPageEntity);
+            log.info(newPageEntity.toString());
             createLemmaForPage(newPageEntity);
         }
         return IndexingResponse.builder().result(true).build();
-    }
-
-    @Override
-    @Transactional
-    public void someMethod(Long id) {
-        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
-        lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
-            lemma.setFrequency(lemma.getFrequency() - 1);
-        });
-        indexRepository.deleteIndexesByPageId(pageEntity.getId());
-        pagesRepository.delete(pageEntity);
     }
 
 
@@ -146,12 +141,13 @@ public class IndexingServiceImpl implements IndexingService {
     private void createLemmaForPage(PageEntity pageEntity) {
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
             LemmaEntity lemmaEntity = lemmasRepository.findByLemma(lemma);
+            log.info( lemma + " Adding lemma {}", lemmaEntity);
             if (lemmaEntity != null) {
                 lemmaEntity.setFrequency(frequency + 1);
                 indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 lemmaEntity = entityCreator.createLemmaForPage(
-                        sitesRepository.findById(pageEntity.getId()).orElseThrow(), lemma
+                        sitesRepository.findById(pageEntity.getSiteId().getId()).orElseThrow(), lemma
                 );
                 lemmasRepository.save(lemmaEntity);
                 indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));

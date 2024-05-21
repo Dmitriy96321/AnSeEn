@@ -30,8 +30,4 @@ public class LemmaEntity implements Serializable {
 
     @Column(name = "frequency")
     private Integer frequency;
-
-
-
-
 }

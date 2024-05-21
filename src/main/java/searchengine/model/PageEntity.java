@@ -32,5 +32,4 @@ public class PageEntity implements Serializable {
 
     @Column(name = "content")
     private String content;
-
 }
