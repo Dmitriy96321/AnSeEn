@@ -14,13 +14,9 @@ import java.util.List;
 @Repository
 public interface PagesRepository extends JpaRepository<PageEntity, Long> {
 
-
-
-
     @Modifying
     @Query(value = "TRUNCATE TABLE page", nativeQuery = true)
     void truncateTablePage();
-
 
     @Query(value = "select * from page p where p.path = :path and p.site_id = :site"
             , nativeQuery = true)
@@ -33,16 +29,6 @@ public interface PagesRepository extends JpaRepository<PageEntity, Long> {
             "JOIN search_engine.indexes i on page.id = i.page_id " +
             "join search_engine.lemma l on l.id = i.lemma_id " +
             "WHERE l.id = :lemma_id", nativeQuery = true)
-    List<PageEntity> findByLemma(@Param("lemma_id")Long lemmaId);
-
-
-
-
-
-
-
-
-
-
+    List<PageEntity> findByLemma(@Param("lemma_id") Long lemmaId);
 
 }

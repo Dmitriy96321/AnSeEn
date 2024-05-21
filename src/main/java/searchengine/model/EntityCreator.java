@@ -32,7 +32,7 @@ public class EntityCreator {
             response = httpParserJsoup.getConnect(link).execute();
             responseCode = response.statusCode();
             pageEntity.setCode(responseCode);
-            pageEntity.setContent((responseCode == 200) ? response.parse().toString() :
+            pageEntity.setContent((responseCode == 200) ? response.parse().body().text() :
                     response.statusMessage());
         } catch (IOException e) {
             log.error(e + e.getMessage() + " " + link + " createPageEntity ");
@@ -44,9 +44,7 @@ public class EntityCreator {
     public SiteEntity createSiteEntity(Site site) {
         SiteEntity siteEntity = new SiteEntity();
         siteEntity.setName(site.getName());
-        siteEntity.setUrl(site.getUrl()
-//                .substring(0, site.getUrl().length() - 1)
-        );
+        siteEntity.setUrl(site.getUrl());
         siteEntity.setStatusTime(LocalDateTime.now());
 
         try {
@@ -82,9 +80,4 @@ public class EntityCreator {
     public Map<String, Integer> getLemmaForPage(PageEntity pageEntity){
         return lemmaParser.getLemmasForPage(pageEntity);
     }
-
-
-
-
-
 }

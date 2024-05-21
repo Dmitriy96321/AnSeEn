@@ -29,15 +29,11 @@ public class SearchServiceImpl implements SearchService {
 
 
     @Override
-    public SearchResponse search(String site, String query) {
+    public SearchResponse search(String site, int offset, int limit, String query) {
         if (query == null || query.isEmpty()) {
             log.error("query is null or empty");
             return SearchResponse.builder().result(false).error("Задан пустой поисковый запрос").build();
         }
-        return buildSearchResponse(site, query);
-    }
-
-    private SearchResponse buildSearchResponse(String site, String query) {
 
         List<SearchResult> resultList = getPagesEntityFromQuery(site, query);
         float maxAbsolutRelevance = resultList.stream()
@@ -56,7 +52,15 @@ public class SearchServiceImpl implements SearchService {
             return SearchResponse.builder().result(false).error("Ничего не найдено").build();
         }
 
-        return SearchResponse.builder().result(true).count(resultList.size()).data(resultList).build();
+        return SearchResponse.builder()
+                .result(true)
+                .count(resultList.size())
+                .data(resultList.size() > limit ?
+                        offset + limit < resultList.size() ?
+                                resultList.subList(offset, offset + limit)
+                                : resultList.subList(offset, resultList.size())
+                        : resultList
+                ).build();
     }
 
 
@@ -164,7 +168,7 @@ public class SearchServiceImpl implements SearchService {
         }
 
         for (String lemma : lemmaParser.getLemmasFromQuery(query)) {
-            String word = lemma.substring(0, (lemma.length() * 75) / 100);
+            String word = lemma.substring(0, (lemma.length() * 80) / 100);
             int index = search.indexOf(word);
             if (search.contains(word)) {
                 snippet.append(getStringForWordFromQuery(search, index));
@@ -193,7 +197,7 @@ public class SearchServiceImpl implements SearchService {
         for (int i = index + word.length(); i <= text.length() - 1; i++) {
             counter++;
             sb.append(text.charAt(i));
-            if (Character.isUpperCase(text.charAt(i)) || counter == 180 || i == text.length() - 1) {
+            if (counter == 90 || i == text.length() - 1) {
                 sb.append(".../");
                 break;
             }

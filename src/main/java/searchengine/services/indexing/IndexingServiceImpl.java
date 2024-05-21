@@ -100,17 +100,6 @@ public class IndexingServiceImpl implements IndexingService {
         return IndexingResponse.builder().result(true).build();
     }
 
-    @Override
-    @Transactional
-    public void someMethod(Long id) {
-        PageEntity pageEntity = pagesRepository.findById(id).orElseThrow();
-        lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
-            lemma.setFrequency(lemma.getFrequency() - 1);
-        });
-        indexRepository.deleteIndexesByPageId(pageEntity.getId());
-        pagesRepository.delete(pageEntity);
-    }
-
 
     private void addAllSites() {
         clearBase();

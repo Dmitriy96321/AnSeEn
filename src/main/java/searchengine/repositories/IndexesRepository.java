@@ -9,8 +9,6 @@ import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 
-import java.util.List;
-
 @Repository
 public interface IndexesRepository extends JpaRepository<IndexEntity, Long> {
     IndexEntity findByPageIdAndLemmaId(PageEntity pageId, LemmaEntity lemmaId);

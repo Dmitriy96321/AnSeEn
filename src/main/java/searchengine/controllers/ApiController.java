@@ -30,8 +30,7 @@ public class ApiController {
         return ResponseEntity.ok(indexingService.stopIndexing());
     }
 
-    //    /startIndexing
-    @GetMapping("/startIndexing")
+        @GetMapping("/startIndexing")
     public ResponseEntity<IndexingResponse> startIndexing() {
         return ResponseEntity.ok(indexingService.startIndexing());
     }
@@ -41,16 +40,14 @@ public class ApiController {
         return ResponseEntity.ok(indexingService.indexPage(url));
     }
 
-    @GetMapping("/Page/{id}")
-    void someMethod(@PathVariable Long id){
-        indexingService.someMethod(id);
-    }
-
-
     @GetMapping("/search")
-    ResponseEntity<SearchResponse> searchFromSite(@RequestParam("query") String query,
-            @RequestParam(name = "site", required = false) String site) {
-        return ResponseEntity.ok(searchService.search(site, query));
+    ResponseEntity<SearchResponse> searchFromSite(
+            @RequestParam("query") String query,
+            @RequestParam("offset") int offset,
+            @RequestParam("limit") int limit,
+            @RequestParam(name = "site", required = false) String site
+    ) {
+        return ResponseEntity.ok(searchService.search(site, offset, limit, query));
     }
 
 }

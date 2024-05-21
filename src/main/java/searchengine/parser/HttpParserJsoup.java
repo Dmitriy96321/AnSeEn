@@ -32,9 +32,7 @@ public class HttpParserJsoup implements HttpParser {
     @Override
     public Set<String> extractLinks(String url) {
         Set<String> links = null;
-//        System.out.println(url);
         try {
-
             links = getConnect(url).get()
                     .select("a[href*=/]")
                     .stream()

@@ -87,6 +87,8 @@ public class PagesExtractorAction extends RecursiveAction {
 
         for (String link : links) {
             if (site.isIndexingIsStopped()) {
+                indexRepository.saveAll(indexEntities);
+                lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
                 return;
             }
             if (lettuceCach.addSet("pages", link)) {
@@ -102,6 +104,7 @@ public class PagesExtractorAction extends RecursiveAction {
                         count--;
                     }
                 }
+
                 if (pageEntity.getId() == null || pageEntity.getContent() == null) {
                     log.error("Error: create page entity failed for " + link);
                     continue;
@@ -127,6 +130,7 @@ public class PagesExtractorAction extends RecursiveAction {
 
         if (!site.isIndexingIsStopped() && isFirst) {
             siteEntity.setStatus(StatusType.INDEXED);
+            siteEntity.setLastError("");
             sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
             lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
             long endTime = System.currentTimeMillis();
@@ -140,7 +144,6 @@ public class PagesExtractorAction extends RecursiveAction {
         LocalDateTime time = LocalDateTime.now();
         siteEntity.setStatusTime(time);
         sitesRepository.setStatusTime(time, siteEntity.getId());
-
     }
 
 

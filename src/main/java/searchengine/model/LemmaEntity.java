@@ -30,12 +30,4 @@ public class LemmaEntity implements Serializable {
 
     @Column(name = "frequency")
     private Integer frequency;
-
-    @Override
-    public String toString() {
-        return "LemmaEntity{" +
-                "lemma='" + lemma + '\'' +
-                ", frequency=" + frequency +
-                '}';
-    }
 }
