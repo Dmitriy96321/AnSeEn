@@ -131,7 +131,7 @@ public class PagesExtractorAction extends RecursiveAction {
         if (!site.isIndexingIsStopped() && isFirst) {
             siteEntity.setStatus(StatusType.INDEXED);
             siteEntity.setLastError("");
-            sitesRepository.setStatusBySite(StatusType.INDEXED, siteEntity.getId());
+            sitesRepository.save(siteEntity);
             lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
             long endTime = System.currentTimeMillis();
 

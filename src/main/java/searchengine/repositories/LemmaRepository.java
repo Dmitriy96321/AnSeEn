@@ -12,13 +12,16 @@ import java.util.List;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
+
     int countBySiteId(SiteEntity siteEntity);
+
+    LemmaEntity findByLemma(String lemma);
+
+    LemmaEntity findByLemmaAndSiteId(String lemma, SiteEntity siteId);
 
     @Modifying
     @Query(value = "TRUNCATE TABLE lemma", nativeQuery = true)
-
     void truncateTableLemma();
-    LemmaEntity findByLemma(String lemma);
 
     @Query(value = "SELECT l.id, l.site_id, lemma, frequency " +
             "FROM page " +
@@ -27,5 +30,5 @@ public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
             "WHERE page.id = :page_id", nativeQuery = true)
     List<LemmaEntity> getLemmasFromPage(@Param("page_id") Long pageId);
 
-    LemmaEntity findByLemmaAndSiteId(String lemma, SiteEntity siteId);
+
 }

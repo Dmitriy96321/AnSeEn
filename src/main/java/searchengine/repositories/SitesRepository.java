@@ -14,13 +14,6 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
-    
-
-
-    @Modifying
-    @Transactional
-    @Query("update SiteEntity s set s.status = :value where s.id = :id")
-    void setStatusBySite(@Param("value") StatusType value, @Param("id") long id);
 
     @Modifying
     @Transactional

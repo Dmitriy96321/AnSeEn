@@ -50,6 +50,7 @@ public class EntityCreator {
         try {
             httpParserJsoup.getConnect(site.getUrl()).execute().statusCode();
             siteEntity.setStatus(StatusType.INDEXING);
+            siteEntity.setLastError("");
         } catch ( IOException e) {
             log.error(e.getMessage());
             siteEntity.setStatus(StatusType.FAILED);
