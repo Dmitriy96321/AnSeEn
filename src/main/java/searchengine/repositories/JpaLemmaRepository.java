@@ -11,7 +11,7 @@ import searchengine.model.SiteEntity;
 import java.util.List;
 
 @Repository
-public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
+public interface JpaLemmaRepository extends JpaRepository<LemmaEntity, Long> {
 
     int countBySiteId(SiteEntity siteEntity);
 

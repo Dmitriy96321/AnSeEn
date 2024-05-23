@@ -2,13 +2,13 @@ package searchengine.parser;
 
 
 import lombok.extern.slf4j.Slf4j;
-import searchengine.config.LettuceCach;
+import searchengine.config.LettuceCache;
 import searchengine.config.Site;
 import searchengine.model.*;
-import searchengine.repositories.IndexesRepository;
-import searchengine.repositories.LemmaRepository;
-import searchengine.repositories.PagesRepository;
-import searchengine.repositories.SitesRepository;
+import searchengine.repositories.JpaIndexesRepository;
+import searchengine.repositories.JpaLemmaRepository;
+import searchengine.repositories.JpaPagesRepository;
+import searchengine.repositories.JpaSitesRepository;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,13 +22,13 @@ public class PagesExtractorAction extends RecursiveAction {
     private SiteEntity siteEntity;
     private String url;
     private final HttpParserJsoup httpParserJsoup;
-    private final PagesRepository pagesRepository;
-    private final SitesRepository sitesRepository;
-    private final LemmaRepository lemmasRepository;
-    private final IndexesRepository indexRepository;
+    private final JpaPagesRepository pagesRepository;
+    private final JpaSitesRepository sitesRepository;
+    private final JpaLemmaRepository lemmasRepository;
+    private final JpaIndexesRepository indexRepository;
     private final ForkJoinPool thisPool;
     private final EntityCreator entityCreator;
-    private final LettuceCach lettuceCach;
+    private final LettuceCache lettuceCach;
     private  Map<String,LemmaEntity> lemmasCache;
     private List<IndexEntity> indexEntities;
     private final boolean isFirst;
@@ -36,8 +36,8 @@ public class PagesExtractorAction extends RecursiveAction {
 
 
     public PagesExtractorAction(Site site, HttpParserJsoup httpParserJsoup,
-                                PagesRepository pagesRepository, SitesRepository sitesRepository,
-                                LemmaRepository lemmasRepository, IndexesRepository indexRepository,
+                                JpaPagesRepository pagesRepository, JpaSitesRepository sitesRepository,
+                                JpaLemmaRepository lemmasRepository, JpaIndexesRepository indexRepository,
                                 ForkJoinPool thisPool, EntityCreator entityCreator) {
         this.entityCreator = entityCreator;
         this.site = site;
@@ -50,7 +50,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
         sitesRepository.save(siteEntity);
-        this.lettuceCach = new LettuceCach(siteEntity);
+        this.lettuceCach = new LettuceCache(siteEntity);
         this.lemmasCache =  new ConcurrentHashMap<>();
         this.isFirst = true;
         this.indexEntities = new ArrayList<>();
@@ -58,10 +58,10 @@ public class PagesExtractorAction extends RecursiveAction {
     }
 
     public PagesExtractorAction(SiteEntity siteEntity, String url, Site site,
-                                HttpParserJsoup httpParserJsoup, PagesRepository pagesRepository,
-                                LemmaRepository lemmasRepository, IndexesRepository indexRepository,
-                                SitesRepository sitesRepository, ForkJoinPool thisPool,
-                                EntityCreator entityCreator, LettuceCach lettuceCach,
+                                HttpParserJsoup httpParserJsoup, JpaPagesRepository pagesRepository,
+                                JpaLemmaRepository lemmasRepository, JpaIndexesRepository indexRepository,
+                                JpaSitesRepository sitesRepository, ForkJoinPool thisPool,
+                                EntityCreator entityCreator, LettuceCache lettuceCach,
                                 Map<String,LemmaEntity> lemmasCache) {
         this.entityCreator = entityCreator;
         this.site = site;

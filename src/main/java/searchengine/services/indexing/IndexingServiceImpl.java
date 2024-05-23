@@ -3,16 +3,15 @@ package searchengine.services.indexing;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
 import searchengine.dto.indexind.IndexingResponse;
 import searchengine.model.*;
-import searchengine.repositories.IndexesRepository;
-import searchengine.repositories.LemmaRepository;
-import searchengine.repositories.PagesRepository;
-import searchengine.repositories.SitesRepository;
+import searchengine.repositories.JpaIndexesRepository;
+import searchengine.repositories.JpaLemmaRepository;
+import searchengine.repositories.JpaPagesRepository;
+import searchengine.repositories.JpaSitesRepository;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.PagesExtractorAction;
 
@@ -25,10 +24,10 @@ import java.util.concurrent.ForkJoinPool;
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
 
-    private final SitesRepository sitesRepository;
-    private final PagesRepository pagesRepository;
-    private final LemmaRepository lemmasRepository;
-    private final IndexesRepository indexRepository;
+    private final JpaSitesRepository sitesRepository;
+    private final JpaPagesRepository pagesRepository;
+    private final JpaLemmaRepository lemmasRepository;
+    private final JpaIndexesRepository indexRepository;
     private final SitesList sitesList;
     private final HttpParserJsoup httpParserJsoup;
     private final List<ForkJoinPool> forkJoinPools;

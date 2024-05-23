@@ -7,13 +7,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import searchengine.model.SiteEntity;
-import searchengine.model.StatusType;
 
 import java.time.LocalDateTime;
 
 
 @Repository
-public interface SitesRepository extends JpaRepository<SiteEntity, Long> {
+public interface JpaSitesRepository extends JpaRepository<SiteEntity, Long> {
 
     @Modifying
     @Transactional

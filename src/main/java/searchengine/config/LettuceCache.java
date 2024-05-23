@@ -5,11 +5,11 @@ import io.lettuce.core.api.sync.RedisCommands;
 import searchengine.model.SiteEntity;
 
 
-public class LettuceCach {
+public class LettuceCache {
     private final RedisCommands<String, String> commands;
     private SiteEntity key;
 
-    public LettuceCach(SiteEntity key) {
+    public LettuceCache(SiteEntity key) {
         RedisClient redisClient = RedisClient.create("redis://" + "localhost" + ":" + 6379);
         commands = redisClient.connect().sync();
         this.key = key;

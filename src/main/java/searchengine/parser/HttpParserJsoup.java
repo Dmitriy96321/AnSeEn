@@ -38,8 +38,10 @@ public class HttpParserJsoup implements HttpParser {
                     .stream()
                     .map(link -> link.attr("href"))
                     .filter(href -> (href.contains(url.replaceAll("^(.*?\\/\\/[^\\/]+\\/).*", "$1"))
-                                || (href.startsWith("/") && href.length() > 4)) && (!href.contains(".jpg")))
-                    .collect(Collectors.toSet())
+                                || (href.startsWith("/") && href.length() > 4))
+                            && !href.contains(".jpg")
+                            && !href.contains(".pdf")
+                    ).collect(Collectors.toSet())
                     .stream()
                     .map(href -> {
                         if (href.startsWith("/")) {

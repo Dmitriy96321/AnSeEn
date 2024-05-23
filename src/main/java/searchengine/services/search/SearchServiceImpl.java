@@ -10,10 +10,10 @@ import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.IndexesRepository;
-import searchengine.repositories.LemmaRepository;
-import searchengine.repositories.PagesRepository;
-import searchengine.repositories.SitesRepository;
+import searchengine.repositories.JpaIndexesRepository;
+import searchengine.repositories.JpaLemmaRepository;
+import searchengine.repositories.JpaPagesRepository;
+import searchengine.repositories.JpaSitesRepository;
 
 import java.util.*;
 
@@ -22,10 +22,10 @@ import java.util.*;
 @RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
     private final LemmaParser lemmaParser;
-    private final SitesRepository sitesRepository;
-    private final PagesRepository pagesRepository;
-    private final LemmaRepository lemmaRepository;
-    private final IndexesRepository indexesRepository;
+    private final JpaSitesRepository sitesRepository;
+    private final JpaPagesRepository pagesRepository;
+    private final JpaLemmaRepository lemmaRepository;
+    private final JpaIndexesRepository indexesRepository;
 
 
     @Override

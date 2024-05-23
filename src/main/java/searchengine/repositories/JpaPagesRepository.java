@@ -12,7 +12,7 @@ import java.util.List;
 
 
 @Repository
-public interface PagesRepository extends JpaRepository<PageEntity, Long> {
+public interface JpaPagesRepository extends JpaRepository<PageEntity, Long> {
 
     Integer countBySiteId(SiteEntity site);
 

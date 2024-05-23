@@ -3,6 +3,8 @@ server:
   port: 8080
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
   datasource:
     username: root
     password: root
@@ -17,28 +19,19 @@ spring:
 
 indexing-settings:
   sites:
-#    - url: https://www.nashe.ru
-#      name: Наше Радио
+    - url: https://Sendel.ru
+      name: Константин Шибков
 
-#    - url: https://Sendel.ru
-#      name: Константин Шибков
+    - url: https://nopaper.ru
+      name: Nopaper
 
-#
-#    - url: https://nopaper.ru
-#      name: Nopaper
+    - url: https://www.ipfran.ru
+      name: Ipfran.ru
 
-#    - url: https://volochek.life
-#      name: Волчёк
-
-#    - url: http://radiomv.ru
-#      name: Радиомов
-
-#    - url:
-#      name:
-
-#
     - url: https://www.playback.ru
       name: PlayBack.Ru
+    - url: https://www.dimonvideo.ru
+      name: Dimonvideo.ru
 connection-config:
   user-agent: AnSeEn/1.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0
   referer: http://www.google.com

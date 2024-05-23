@@ -9,10 +9,11 @@ import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.SiteEntity;
-import searchengine.repositories.LemmaRepository;
-import searchengine.repositories.PagesRepository;
-import searchengine.repositories.SitesRepository;
+import searchengine.repositories.JpaLemmaRepository;
+import searchengine.repositories.JpaPagesRepository;
+import searchengine.repositories.JpaSitesRepository;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +23,9 @@ import java.util.List;
 public class StatisticsServiceImpl implements StatisticsService {
 
     private final SitesList sites;
-    private final SitesRepository sitesRepository;
-    private final PagesRepository pagesRepository;
-    private final LemmaRepository lemmaRepository;
+    private final JpaSitesRepository sitesRepository;
+    private final JpaPagesRepository pagesRepository;
+    private final JpaLemmaRepository lemmaRepository;
 
     @Override
     public StatisticsResponse getStatistics() {
@@ -37,15 +38,27 @@ public class StatisticsServiceImpl implements StatisticsService {
         for (Site value : sitesList) {
             SiteEntity site = sitesRepository.findBySiteUrl(value.getUrl());
             DetailedStatisticsItem item = new DetailedStatisticsItem();
-            item.setName(site.getName());
-            item.setUrl(site.getUrl());
-            item.setPages(pagesRepository.countBySiteId(site));
-            item.setLemmas(lemmaRepository.countBySiteId(site));
-            item.setStatus(site.getStatus().toString());
-            item.setError(site.getLastError());
-            item.setStatusTime(site.getStatusTime().toInstant(ZoneOffset.UTC).toEpochMilli());
-            total.setPages(total.getPages() + pagesRepository.countBySiteId(site));
-            total.setLemmas(total.getLemmas() + lemmaRepository.countBySiteId(site));
+            if (site != null) {
+                item.setName(site.getName());
+                item.setUrl(site.getUrl());
+                item.setPages(pagesRepository.countBySiteId(site));
+                item.setLemmas(lemmaRepository.countBySiteId(site));
+                item.setStatus(site.getStatus().toString());
+                item.setError(site.getLastError());
+                item.setStatusTime(site.getStatusTime().toInstant(ZoneOffset.UTC).toEpochMilli());
+                total.setPages(total.getPages() + pagesRepository.countBySiteId(site));
+                total.setLemmas(total.getLemmas() + lemmaRepository.countBySiteId(site));
+            } else {
+                item.setName(value.getName());
+                item.setUrl(value.getUrl());
+                item.setPages(0);
+                item.setLemmas(0);
+                item.setStatus("FAILED");
+                item.setError("NOT_INDEXING");
+                item.setStatusTime(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+                total.setPages(total.getPages());
+                total.setLemmas(total.getLemmas());
+            }
             detailed.add(item);
         }
 
