@@ -56,9 +56,9 @@ public class HttpParserJsoup implements HttpParser {
             links.add(url);
             return links;
         } catch (IOException e) {
-            log.error(e + " - extractLinks");
+            log.error("{} - extractLinks", e);
         }
-        log.info(links + " - extractLinks");
+        log.info("{} - extractLinks", links);
         return links;
     }
 

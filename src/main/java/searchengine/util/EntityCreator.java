@@ -36,7 +36,7 @@ public class EntityCreator {
             pageEntity.setContent((responseCode == 200) ? response.parse().body().text() :
                     response.statusMessage());
         } catch (IOException e) {
-            log.error(e + e.getMessage() + " " + link + " createPageEntity ");
+            log.error("{}{} {} createPageEntity ", e, e.getMessage(), link);
             return pageEntity;
         }
         return pageEntity;
@@ -56,9 +56,8 @@ public class EntityCreator {
             log.error(e.getMessage());
             siteEntity.setStatus(StatusType.FAILED);
             site.setIndexingIsStopped(true);
-            log.info(site.getUrl() + " " + site.isIndexingIsStopped());
+            log.info("{} {}", site.getUrl(), site.isIndexingIsStopped());
             siteEntity.setLastError(e.getClass() + e.getMessage());
-            System.out.println(siteEntity.getStatus());
         }
         return siteEntity;
     }
