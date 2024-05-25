@@ -81,7 +81,7 @@ public class SearchServiceImpl implements SearchService {
 
                 list = list.stream()
                         .filter(pageEntity ->
-                                lemmaRepository.getLemmasFromPage(pageEntity.getId())
+                                lemmaRepository.getLemmasFromPage(pageEntity.getId(),siteEntity.getId())
                                         .contains(lemmaEntity))
                         .toList();
 

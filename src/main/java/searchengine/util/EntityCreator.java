@@ -1,4 +1,4 @@
-package searchengine.model;
+package searchengine.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,6 +6,7 @@ import org.jsoup.Connection;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import searchengine.config.Site;
+import searchengine.model.*;
 import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
 
@@ -21,7 +22,7 @@ public class EntityCreator {
     private final HttpParserJsoup httpParserJsoup;
     private final LemmaParser lemmaParser;
 
-    public  PageEntity createPageEntity(String link, SiteEntity siteEntity) {
+    public PageEntity createPageEntity(String link, SiteEntity siteEntity) {
         int responseCode;
         PageEntity pageEntity = new PageEntity();
         Connection.Response response = null;

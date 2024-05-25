@@ -1,10 +1,11 @@
-package searchengine.parser;
+package searchengine.util;
 
 
 import lombok.extern.slf4j.Slf4j;
 import searchengine.config.LettuceCache;
 import searchengine.config.Site;
 import searchengine.model.*;
+import searchengine.parser.HttpParserJsoup;
 import searchengine.repositories.JpaIndexesRepository;
 import searchengine.repositories.JpaLemmaRepository;
 import searchengine.repositories.JpaPagesRepository;
@@ -61,7 +62,7 @@ public class PagesExtractorAction extends RecursiveAction {
                                 HttpParserJsoup httpParserJsoup, JpaPagesRepository pagesRepository,
                                 JpaLemmaRepository lemmasRepository, JpaIndexesRepository indexRepository,
                                 JpaSitesRepository sitesRepository, ForkJoinPool thisPool,
-                                EntityCreator entityCreator, LettuceCache lettuceCach,
+                                EntityCreator entityCreator, LettuceCache lettuceCache,
                                 Map<String,LemmaEntity> lemmasCache) {
         this.entityCreator = entityCreator;
         this.site = site;
@@ -73,7 +74,7 @@ public class PagesExtractorAction extends RecursiveAction {
         this.thisPool = thisPool;
         this.lemmasRepository = lemmasRepository;
         this.indexRepository = indexRepository;
-        this.lettuceCach = lettuceCach;
+        this.lettuceCach = lettuceCache;
         this.lemmasCache = lemmasCache;
         this.isFirst = false;
         this.indexEntities = new ArrayList<>();
@@ -100,26 +101,25 @@ public class PagesExtractorAction extends RecursiveAction {
                         pagesRepository.save(pageEntity);
                         count = 0;
                     } catch (Exception e) {
-                        log.error(e.getMessage() + " " + count);
+                        log.error("{} {}", e.getMessage(), count);
                         count--;
                     }
                 }
 
                 if (pageEntity.getId() == null || pageEntity.getContent() == null) {
-                    log.error("Error: create page entity failed for " + link);
+                    log.error("Error: create page entity failed for {}", link);
                     continue;
                 }
 
                 saveLemmas(pageEntity);
                 saveTime();
+
                 PagesExtractorAction task = new PagesExtractorAction(siteEntity, link, site,
                         httpParserJsoup, pagesRepository,
                         lemmasRepository, indexRepository,
                         sitesRepository, thisPool, entityCreator, lettuceCach, lemmasCache);
-
                 task.fork();
                 taskList.add(task);
-
             }
 
         }
@@ -134,9 +134,7 @@ public class PagesExtractorAction extends RecursiveAction {
             sitesRepository.save(siteEntity);
             lemmasRepository.saveAll(new ArrayList<>(lemmasCache.values()));
             long endTime = System.currentTimeMillis();
-
-            System.out.println("Время выполнения: " + (endTime - start) + " миллисекунд");
-
+            log.info("Время индексации {} : {} миллисекунд", siteEntity.getName(),(endTime - start));
         }
 
     }

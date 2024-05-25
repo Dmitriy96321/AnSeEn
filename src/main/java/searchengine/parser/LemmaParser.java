@@ -10,7 +10,6 @@ import org.apache.lucene.morphology.LuceneMorphology;
 import searchengine.model.PageEntity;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 @Component
@@ -18,6 +17,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class LemmaParser {
     private final LuceneMorphology luceneMorph;
+    private final String[] PARTS = {
+            "|A С мр,ед,им"
+            , "|a Г дст,прш,мр,ед"
+            , "|j Н"
+            , "|Y КР_ПРИЛ ср,ед,од,но"
+            , "|Y П мр,ед,вн,но"
+            , "|K С ср,ед,им"
+            , "|G С жр,ед,им"
+            , "|a ИНФИНИТИВ дст"
+    };
 
 
     public List<String> getLemmasFromQuery(String query) {
@@ -25,7 +34,7 @@ public class LemmaParser {
         splitTextIntoWords(query).stream()
                 .filter(words -> !words.isEmpty())
                 .map(luceneMorph::getNormalForms).forEach(wordForms -> {
-                    if (isNotFunctionalPartSpeech(luceneMorph.getMorphInfo(wordForms.get(0)).toString())){
+                    if (Arrays.stream(PARTS).anyMatch(luceneMorph.getMorphInfo(wordForms.get(0)).toString()::contains)){
                         lemmas.add(wordForms.get(0));
                     }
                 });
@@ -39,7 +48,7 @@ public class LemmaParser {
         splitTextIntoWords(Jsoup.parse(text).text()).stream()
                 .filter(words -> !words.isEmpty())
                 .map(luceneMorph::getNormalForms).forEach(wordForms -> {
-                    if (isNotFunctionalPartSpeech(luceneMorph.getMorphInfo(wordForms.get(0)).toString())) {
+                    if (Arrays.stream(PARTS).anyMatch(luceneMorph.getMorphInfo(wordForms.get(0)).toString()::contains)){
                         map.merge(wordForms.get(0), 1, Integer::sum);
                     }
                 });
@@ -53,27 +62,5 @@ public class LemmaParser {
                 .replaceAll("\\s{2,}"," ")
                 .toLowerCase().split(" ")
         ).toList();
-    }
-
-
-    private boolean isNotFunctionalPartSpeech(String text) {
-        AtomicBoolean out = new AtomicBoolean(false);
-        String[] parts = {
-                 "|A С мр,ед,им"
-                , "|a Г дст,прш,мр,ед"
-                , "|j Н"
-                , "|Y КР_ПРИЛ ср,ед,од,но"
-                , "|Y П мр,ед,вн,но"
-                , "|K С ср,ед,им"
-                , "|G С жр,ед,им"
-                , "|a ИНФИНИТИВ дст"
-        };
-        Arrays.stream(parts).forEach(word -> {
-                    if (text.contains(word)) {
-                        out.set(true);
-                    }
-                }
-        );
-        return out.get();
     }
 }

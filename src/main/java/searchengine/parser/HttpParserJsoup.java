@@ -20,7 +20,7 @@ public class HttpParserJsoup implements HttpParser {
 
     private final ClientConfig config;
 
-    public synchronized Connection getConnect(String url) {
+    public Connection getConnect(String url) {
         return Jsoup.connect(url)
                 .userAgent(config.getUserAgent())
                 .referrer(config.getReferer())

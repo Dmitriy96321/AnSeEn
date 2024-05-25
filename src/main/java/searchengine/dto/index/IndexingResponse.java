@@ -1,4 +1,4 @@
-package searchengine.dto.indexind;
+package searchengine.dto.index;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;

@@ -1,4 +1,4 @@
-package searchengine.services.indexing;
+package searchengine.services.index;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -6,14 +6,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.Jedis;
 import searchengine.config.SitesList;
-import searchengine.dto.indexind.IndexingResponse;
+import searchengine.dto.index.IndexingResponse;
 import searchengine.model.*;
 import searchengine.repositories.JpaIndexesRepository;
 import searchengine.repositories.JpaLemmaRepository;
 import searchengine.repositories.JpaPagesRepository;
 import searchengine.repositories.JpaSitesRepository;
 import searchengine.parser.HttpParserJsoup;
-import searchengine.parser.PagesExtractorAction;
+import searchengine.util.PagesExtractorAction;
+import searchengine.util.EntityCreator;
 
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -69,7 +70,8 @@ public class IndexingServiceImpl implements IndexingService {
     @Transactional
     public IndexingResponse indexPage(String urlPage) {
         log.info("Indexing page {}", urlPage);
-        SiteEntity siteEntity = sitesRepository.findBySiteUrl(urlPage.substring(0, urlPage.indexOf("/", 8)));
+        SiteEntity siteEntity =
+                sitesRepository.findBySiteUrl(urlPage.substring(0, urlPage.indexOf("/", 8)));
         if (siteEntity == null) {
             return IndexingResponse.builder().result(false).error("Данная страница находится за пределами сайтов, \n" +
                     "указанных в конфигурационном файле\n").build();
@@ -77,21 +79,18 @@ public class IndexingServiceImpl implements IndexingService {
 
         PageEntity newPageEntity = entityCreator.createPageEntity(urlPage, siteEntity);
         PageEntity pageEntity = pagesRepository.findByPagePath(newPageEntity.getPath(),siteEntity.getId());
-
         if (pageEntity != null) {
-            log.info(pageEntity.toString());
-            lemmasRepository.getLemmasFromPage(pageEntity.getId()).forEach(lemma -> {
+            log.info(pageEntity.getId().toString());
+            List<LemmaEntity> lemmaEntityList =
+                    lemmasRepository.getLemmasFromPage(pageEntity.getId(),siteEntity.getId());
+            lemmaEntityList.forEach(lemma -> {
                 lemma.setFrequency(lemma.getFrequency() - 1);
             });
             indexRepository.deleteIndexesByPageId(pageEntity.getId());
-
             pageEntity.setContent(newPageEntity.getContent());
             pageEntity.setCode(newPageEntity.getCode());
-
             createLemmaForPage(pageEntity);
-
         } else {
-
             pagesRepository.save(newPageEntity);
             log.info(newPageEntity.toString());
             createLemmaForPage(newPageEntity);
@@ -129,7 +128,6 @@ public class IndexingServiceImpl implements IndexingService {
 
     private void clearBase() {
         forkJoinPools.clear();
-        log.info("Adding site");
         sitesRepository.truncateTableSite();
         pagesRepository.truncateTablePage();
         lemmasRepository.truncateTableLemma();
@@ -139,8 +137,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     private void createLemmaForPage(PageEntity pageEntity) {
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
-            LemmaEntity lemmaEntity = lemmasRepository.findByLemma(lemma);
-            log.info( lemma + " Adding lemma {}", lemmaEntity);
+            LemmaEntity lemmaEntity = lemmasRepository.findByLemmaAndSiteId(lemma,pageEntity.getSiteId());
             if (lemmaEntity != null) {
                 lemmaEntity.setFrequency(frequency + 1);
                 indexRepository.save(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));

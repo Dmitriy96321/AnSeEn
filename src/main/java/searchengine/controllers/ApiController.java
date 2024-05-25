@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import searchengine.dto.indexind.IndexingResponse;
+import searchengine.dto.index.IndexingResponse;
 import searchengine.dto.search.SearchResponse;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.services.indexing.IndexingService;
+import searchengine.services.index.IndexingService;
 import searchengine.services.search.SearchService;
 import searchengine.services.statistics.StatisticsService;
 
