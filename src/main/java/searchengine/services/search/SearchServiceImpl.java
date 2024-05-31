@@ -9,12 +9,16 @@ import searchengine.dto.search.SearchResult;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
+import searchengine.model.StatusType;
+import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
 import searchengine.repositories.JpaIndexesRepository;
 import searchengine.repositories.JpaLemmaRepository;
 import searchengine.repositories.JpaPagesRepository;
 import searchengine.repositories.JpaSitesRepository;
 
+
+import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -26,6 +30,7 @@ public class SearchServiceImpl implements SearchService {
     private final JpaPagesRepository pagesRepository;
     private final JpaLemmaRepository lemmaRepository;
     private final JpaIndexesRepository indexesRepository;
+    private final HttpParserJsoup httpParserJsoup;
 
 
     @Override
@@ -33,6 +38,15 @@ public class SearchServiceImpl implements SearchService {
         if (query == null || query.isEmpty()) {
             log.error("query is null or empty");
             return SearchResponse.builder().result(false).error("Задан пустой поисковый запрос").build();
+        }
+
+        if (site != null){
+            SiteEntity siteEntity = sitesRepository.findBySiteUrl(site);
+            if (siteEntity == null) {
+                return SearchResponse.builder().result(false).error("Указанная страница не найдена").build();
+            } else if (siteEntity.getStatus().equals(StatusType.INDEXING)){
+                return SearchResponse.builder().result(false).error("Индексация " + site + " не завершена.").build();
+            }
         }
 
         List<SearchResult> resultList = getPagesEntityFromQuery(site, query);
@@ -93,13 +107,21 @@ public class SearchServiceImpl implements SearchService {
                 for (LemmaEntity lemmaEntity : lemmaEntityList) {
                     relevance = relevance + indexesRepository.findByPageIdAndLemmaId(pageEntity, lemmaEntity).getRank();
                 }
+                String title = "";
+                try {
+                    title = httpParserJsoup.getConnect(pageEntity.getSiteId().getUrl() + pageEntity.getPath())
+                            .execute().parse().title();
+                } catch (IOException e) {
+                    log.error(e.getMessage());
+                }
                 return SearchResult.builder()
                         .site(pageEntity.getSiteId().getUrl())
                         .siteName(pageEntity.getSiteId().getName())
                         .uri(pageEntity.getPath())
-                        .title(Jsoup.parse(pageEntity.getContent()).title())
+                        .title(title)
                         .relevance(relevance)
                         .build();
+
             }).toList());
         });
 
@@ -148,6 +170,8 @@ public class SearchServiceImpl implements SearchService {
                 sitesRepository.findBySiteUrl(result.getSite()).getId());
         String search = Jsoup.parse(page.getContent()).body().text();
         StringBuilder snippet = new StringBuilder();
+
+
 
         if (search.contains(query)) {
             int index = search.indexOf(query);

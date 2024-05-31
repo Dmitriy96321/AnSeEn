@@ -146,15 +146,18 @@ public class PagesExtractorAction extends RecursiveAction {
 
 
     public void saveLemmas(PageEntity pageEntity) {
-        List<LemmaEntity> newLemmasEntityList = new ArrayList<>();
+//        List<LemmaEntity> newLemmasEntityList = new ArrayList<>();
+
         entityCreator.getLemmaForPage(pageEntity).forEach((lemma, frequency) -> {
             if (site.isIndexingIsStopped() || pageEntity.getCode() != 200) {
                 return;
             }
             if (lettuceCach.addSet("lemma", lemma)) {
                 LemmaEntity lemmaEntity = entityCreator.createLemmaForPage(siteEntity, lemma);
+//                System.out.println(lemma + " "+ pageEntity.getId());
                 lemmasCache.put(lemma, lemmaEntity);
-                newLemmasEntityList.add(lemmaEntity);
+                lemmasRepository.save(lemmaEntity);
+//                newLemmasEntityList.add(lemmaEntity);
                 indexEntities.add(entityCreator.createIndexEntity(pageEntity, lemmaEntity, frequency));
             } else {
                 LemmaEntity lemmaEntity = lemmasCache.get(lemma);
@@ -163,6 +166,6 @@ public class PagesExtractorAction extends RecursiveAction {
                 lemmasCache.put(lemma, lemmaEntity);
             }
         });
-        lemmasRepository.saveAll(newLemmasEntityList);
+//        lemmasRepository.saveAll(newLemmasEntityList);
     }
 }

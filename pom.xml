@@ -156,6 +156,7 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-function-web</artifactId>
         </dependency>
+
     </dependencies>
 
 </project>
