@@ -48,10 +48,12 @@
 ## Технологии используемые в проекте 
 + Java 17
   + Spring Boot 3.2.2
+  + Hibernate (JPA)
   + Jsoup
   + Log4J
   + Lucene
   + Maven
++ REST
 + MySql
   + Flyway
 + Redis
