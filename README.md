@@ -6,6 +6,8 @@
 ![Static Badge](https://img.shields.io/badge/Jsoup-1071D3?style=flat&logo=jsoup&logoColor=white)
 ![Static Badge](https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white)
 ![Static Badge](https://img.shields.io/badge/MySql-4479A1?style=flat&logo=MySql&logoColor=white) 
+
+@Contacts [t.me/KarDmitriy](https://t.me/KarDmitriy)
  
 
 ## Краткое описание
