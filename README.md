@@ -36,7 +36,7 @@
 + Результаты поиска ранжируются, сортируются и отдаются пользователю.
 ## Быстрый Запуск
 Для запуска потребуется установленная Java 17, а так же Docker.
- + Скачать самодостаточный архив(все необходимые библиотеки уже присутсвуют) [AnSeEn-1.0-SNAPSHOT.jar](https://img.shields.io/badge/MySql-4479A1?style=flat&logo=MySql&logoColor=white).
+ + Скачать самодостаточный архив(все необходимые библиотеки уже присутсвуют) [AnSeEn-1.0-SNAPSHOT.jar](https://disk.yandex.ru/d/0s1UqL-u2TDoqg).
  + Запустить 2 контейнера в Docker.
    ```bash
    docker run --name redis -p 6379:6379 -d redis
