@@ -25,13 +25,9 @@ indexing-settings:
     - url: https://nopaper.ru
       name: Nopaper
 
-#    - url: https://www.ipfran.ru
-#      name: Ipfran.ru
-
     - url: https://www.playback.ru
       name: PlayBack.Ru
-#    - url: https://www.dimonvideo.ru
-#      name: Dimonvideo.ru
+
 connection-config:
   user-agent: AnSeEn/1.0 (X11; Ubuntu; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0
   referer: http://www.google.com
