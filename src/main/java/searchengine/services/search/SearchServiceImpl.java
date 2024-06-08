@@ -1,5 +1,6 @@
 package searchengine.services.search;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -16,6 +17,7 @@ import searchengine.repositories.JpaIndexesRepository;
 import searchengine.repositories.JpaLemmaRepository;
 import searchengine.repositories.JpaPagesRepository;
 import searchengine.repositories.JpaSitesRepository;
+import searchengine.util.SnippetBuilder;
 
 
 import java.io.IOException;
@@ -31,10 +33,12 @@ public class SearchServiceImpl implements SearchService {
     private final JpaLemmaRepository lemmaRepository;
     private final JpaIndexesRepository indexesRepository;
     private final HttpParserJsoup httpParserJsoup;
+    private final SnippetBuilder snippetBuilder;
 
 
     @Override
     public SearchResponse search(String site, int offset, int limit, String query) {
+        log.info("Searching for site: " + site);
         if (query == null || query.isEmpty()) {
             log.error("query is null or empty");
             return SearchResponse.builder().result(false).error("Задан пустой поисковый запрос").build();
@@ -48,17 +52,16 @@ public class SearchServiceImpl implements SearchService {
                 return SearchResponse.builder().result(false).error("Индексация " + site + " не завершена.").build();
             }
         }
+        Map<SiteEntity, List<LemmaEntity>> siteLemmasListMap = getLemmaEntityList(site, query);
 
-        List<SearchResult> resultList = getPagesEntityFromQuery(site, query);
+        List<SearchResult> resultList = getPagesEntityFromQuery(siteLemmasListMap, query);
         float maxAbsolutRelevance = resultList.stream()
                 .map(SearchResult::getRelevance)
                 .max(Float::compareTo)
                 .orElse(0f);
 
-        resultList.forEach(searchResult -> {
-                    searchResult.setSnippet(getSnippet(searchResult, query));
-                    searchResult.setRelevance(searchResult.getRelevance() / maxAbsolutRelevance);
-                }
+        resultList.forEach(
+                searchResult -> searchResult.setRelevance(searchResult.getRelevance() / maxAbsolutRelevance)
         );
         resultList.sort(Comparator.comparing(SearchResult::getRelevance).reversed());
 
@@ -78,11 +81,12 @@ public class SearchServiceImpl implements SearchService {
     }
 
 
-    private List<SearchResult> getPagesEntityFromQuery(String site, String query) {
+    private List<SearchResult> getPagesEntityFromQuery(Map<SiteEntity, List<LemmaEntity>> siteLemmasListMap
+            , String query) {
 
         List<SearchResult> listPageEntityFromSiteMap = new ArrayList<>();
 
-        getLemmaEntityList(site, query).forEach((siteEntity, lemmaEntityList) -> {
+        siteLemmasListMap.forEach((siteEntity, lemmaEntityList) -> {
             List<PageEntity> list = new ArrayList<>();
             int counter = lemmaEntityList.size();
 
@@ -119,6 +123,7 @@ public class SearchServiceImpl implements SearchService {
                         .siteName(pageEntity.getSiteId().getName())
                         .uri(pageEntity.getPath())
                         .title(title)
+                        .snippet(snippetBuilder.getSnippet(pageEntity,query))
                         .relevance(relevance)
                         .build();
 
@@ -130,6 +135,7 @@ public class SearchServiceImpl implements SearchService {
 
 
     private Map<SiteEntity, List<LemmaEntity>> getLemmaEntityList(String site, String query) {
+        log.info("get");
         Map<SiteEntity, List<LemmaEntity>> listLemmasEntityFromSiteMap = new HashMap<>();
         if (site == null || site.isEmpty()) {
             List<SiteEntity> siteEntities = sitesRepository.findAll();
@@ -140,6 +146,7 @@ public class SearchServiceImpl implements SearchService {
         }
         SiteEntity siteEntity = sitesRepository.findBySiteUrl(site);
         listLemmasEntityFromSiteMap.put(siteEntity, getLemmaEntityListFromSite(query, siteEntity));
+        log.info("{}",listLemmasEntityFromSiteMap.keySet().size());
         return listLemmasEntityFromSiteMap;
     }
 
@@ -164,70 +171,5 @@ public class SearchServiceImpl implements SearchService {
 
         return list;
     }
-
-    private String getSnippet(SearchResult result, String query) {
-        PageEntity page = pagesRepository.findByPagePath(result.getUri(),
-                sitesRepository.findBySiteUrl(result.getSite()).getId());
-        String search = Jsoup.parse(page.getContent()).body().text();
-        StringBuilder snippet = new StringBuilder();
-
-
-
-        if (search.contains(query)) {
-            int index = search.indexOf(query);
-            if (index != -1) {
-                int wordStart = Math.max(index - 140, 0);
-                int wordEnd = Math.min(index + query.length() + 140, search.length());
-                snippet.append("...").append(search, wordStart, index)
-                        .append("<b>").append(query).append("</b>")
-                        .append(search, index + query.length(), wordEnd)
-                        .append("...");
-            } else {
-                snippet.append("...")
-                        .append("<b>").append(query).append("</b>")
-                        .append(search, index + query.length(), Math.min(query.length() + 120, search.length()))
-                        .append("...");
-            }
-            return snippet.toString();
-        }
-
-        for (String lemma : lemmaParser.getLemmasFromQuery(query)) {
-            String word = lemma.substring(0, (lemma.length() * 80) / 100);
-            int index = search.indexOf(word);
-            if (search.contains(word)) {
-                snippet.append(getStringForWordFromQuery(search, index));
-            }
-        }
-        return snippet.toString();
-    }
-
-    private String getStringForWordFromQuery(String text, int index) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = index - 1; index > 0; i--) {
-            sb.append(text.charAt(i));
-            if (Character.isUpperCase(text.charAt(i))) {
-                sb.reverse();
-                break;
-            } else if (i == 0) {
-                sb.reverse();
-                break;
-            }
-        }
-        String word = text.substring(index, text.indexOf(" ", index) == -1 ?
-                text.length() :
-                text.indexOf(" ", index));
-        sb.append("<b>").append(word).append("</b>");
-        int counter = 0;
-        for (int i = index + word.length(); i <= text.length() - 1; i++) {
-            counter++;
-            sb.append(text.charAt(i));
-            if (counter == 90 || i == text.length() - 1) {
-                sb.append(".../");
-                break;
-            }
-        }
-        return sb.toString();
-    }
-
 }
 

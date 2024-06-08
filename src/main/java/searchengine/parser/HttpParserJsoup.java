@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import searchengine.config.ClientConfig;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,14 +32,15 @@ public class HttpParserJsoup implements HttpParser {
 
     @Override
     public Set<String> extractLinks(String url) {
-        Set<String> links = null;
+        Set<String> links = new HashSet<>();
         try {
-            links = getConnect(url).get()
+            links.add(url);
+            links.addAll(getConnect(url).get()
                     .select("a[href*=/]")
                     .stream()
                     .map(link -> link.attr("href"))
                     .filter(href -> (href.contains(url.replaceAll("^(.*?\\/\\/[^\\/]+\\/).*", "$1"))
-                                || (href.startsWith("/") && href.length() > 4))
+                            || (href.startsWith("/") && href.length() > 4))
                             && !href.contains(".jpg")
                             && !href.contains(".pdf")
                     ).collect(Collectors.toSet())
@@ -52,13 +54,11 @@ public class HttpParserJsoup implements HttpParser {
                         }
                         return href;
                     })
-                    .collect(Collectors.toSet());
-            links.add(url);
-            return links;
+                    .toList());
+
         } catch (IOException e) {
             log.error("{} - extractLinks", e);
         }
-        log.info("{} - extractLinks", links);
         return links;
     }
 

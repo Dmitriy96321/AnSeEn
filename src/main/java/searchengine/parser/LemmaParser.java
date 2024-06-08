@@ -60,7 +60,7 @@ public class LemmaParser {
                 .map(word -> word.matches("^[A-z]*$") ? english.getNormalForms(word) :
                         russian.getNormalForms(word.replaceAll("[^а-яА-Я]", ""))
                 ).forEach(wordForms -> map.merge(wordForms.get(0),
-                        wordForms.get(0).matches("^[A-z]*$") ?
+                        wordForms.get(0).matches("^[a-zA-Z]*$") ?
                                 (Arrays.stream(PARTS).noneMatch(
                                         english.getMorphInfo(wordForms.get(0)).toString()::contains) ? 1 : 0) :
                                 (Arrays.stream(PARTS).noneMatch(
