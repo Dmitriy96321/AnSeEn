@@ -33,7 +33,7 @@ public class EntityCreator {
             response = httpParserJsoup.getConnect(link).execute();
             responseCode = response.statusCode();
             pageEntity.setCode(responseCode);
-            pageEntity.setContent((responseCode == 200) ? response.parse().body().text() :
+            pageEntity.setContent((responseCode == 200) ? response.parse().toString() :
                     response.statusMessage());
         } catch (IOException e) {
             log.error("{}{} {} createPageEntity ", e, e.getMessage(), link);

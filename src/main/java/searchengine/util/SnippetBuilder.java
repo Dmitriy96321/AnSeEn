@@ -3,26 +3,17 @@ package searchengine.util;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Component;
-import searchengine.dto.search.SearchResult;
 import searchengine.model.PageEntity;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.JpaPagesRepository;
-import searchengine.repositories.JpaSitesRepository;
 
 @Component
 @RequiredArgsConstructor
 public class SnippetBuilder {
 private final LemmaParser lemmaParser;
-private final JpaPagesRepository pagesRepository;
-private final JpaSitesRepository sitesRepository;
 
     public String getSnippet(PageEntity pageEntity, String query) {
-//        PageEntity page = pagesRepository.findByPagePath(result.getUri(),
-//                sitesRepository.findBySiteUrl(result.getSite()).getId());
         String search = Jsoup.parse(pageEntity.getContent()).body().text();
         StringBuilder snippet = new StringBuilder();
-
-
 
         if (search.contains(query)) {
             int index = search.indexOf(query);

@@ -12,7 +12,6 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
-<!--        <start-class>searchengine.Application</start-class>-->
     </properties>
     <dependencyManagement>
         <dependencies>

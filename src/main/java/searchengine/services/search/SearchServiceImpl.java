@@ -1,6 +1,5 @@
 package searchengine.services.search;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -11,16 +10,12 @@ import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.StatusType;
-import searchengine.parser.HttpParserJsoup;
 import searchengine.parser.LemmaParser;
-import searchengine.repositories.JpaIndexesRepository;
 import searchengine.repositories.JpaLemmaRepository;
 import searchengine.repositories.JpaPagesRepository;
 import searchengine.repositories.JpaSitesRepository;
 import searchengine.util.SnippetBuilder;
 
-
-import java.io.IOException;
 import java.util.*;
 
 @Slf4j
@@ -31,14 +26,12 @@ public class SearchServiceImpl implements SearchService {
     private final JpaSitesRepository sitesRepository;
     private final JpaPagesRepository pagesRepository;
     private final JpaLemmaRepository lemmaRepository;
-    private final JpaIndexesRepository indexesRepository;
-    private final HttpParserJsoup httpParserJsoup;
     private final SnippetBuilder snippetBuilder;
 
 
     @Override
     public SearchResponse search(String site, int offset, int limit, String query) {
-        log.info("Searching for site: " + site);
+        log.info("Searching for site: {}", site);
         if (query == null || query.isEmpty()) {
             log.error("query is null or empty");
             return SearchResponse.builder().result(false).error("Задан пустой поисковый запрос").build();
@@ -80,12 +73,9 @@ public class SearchServiceImpl implements SearchService {
                 ).build();
     }
 
-
     private List<SearchResult> getPagesEntityFromQuery(Map<SiteEntity, List<LemmaEntity>> siteLemmasListMap
             , String query) {
-
         List<SearchResult> listPageEntityFromSiteMap = new ArrayList<>();
-
         siteLemmasListMap.forEach((siteEntity, lemmaEntityList) -> {
             List<PageEntity> list = new ArrayList<>();
             int counter = lemmaEntityList.size();
@@ -99,43 +89,32 @@ public class SearchServiceImpl implements SearchService {
 
                 list = list.stream()
                         .filter(pageEntity ->
-                                lemmaRepository.getLemmasFromPage(pageEntity.getId(),siteEntity.getId())
+                                lemmaRepository.getLemmasFromPage(pageEntity.getId(), siteEntity.getId())
                                         .contains(lemmaEntity))
                         .toList();
-
-
             }
 
-            listPageEntityFromSiteMap.addAll(list.stream().map(pageEntity -> {
-                float relevance = 0;
-                for (LemmaEntity lemmaEntity : lemmaEntityList) {
-                    relevance = relevance + indexesRepository.findByPageIdAndLemmaId(pageEntity, lemmaEntity).getRank();
-                }
-                String title = "";
-                try {
-                    title = httpParserJsoup.getConnect(pageEntity.getSiteId().getUrl() + pageEntity.getPath())
-                            .execute().parse().title();
-                } catch (IOException e) {
-                    log.error(e.getMessage());
-                }
-                return SearchResult.builder()
-                        .site(pageEntity.getSiteId().getUrl())
-                        .siteName(pageEntity.getSiteId().getName())
-                        .uri(pageEntity.getPath())
-                        .title(title)
-                        .snippet(snippetBuilder.getSnippet(pageEntity,query))
-                        .relevance(relevance)
-                        .build();
+            List<Float> gf = pagesRepository.findTotalRankByPageIdsAndLemmaIds(list, lemmaEntityList);
 
-            }).toList());
+            for (int i = 0; i < gf.size(); i++) {
+                PageEntity pageEntity = list.get(i);
+                listPageEntityFromSiteMap.add(
+                        SearchResult.builder()
+                                .site(pageEntity.getSiteId().getUrl())
+                                .siteName(pageEntity.getSiteId().getName())
+                                .uri(pageEntity.getPath())
+                                .title(Jsoup.parse(pageEntity.getContent()).title())
+                                .snippet(snippetBuilder.getSnippet(pageEntity, query))
+                                .relevance(gf.get(i))
+                                .build()
+                );
+            }
         });
-
         return listPageEntityFromSiteMap;
     }
 
 
     private Map<SiteEntity, List<LemmaEntity>> getLemmaEntityList(String site, String query) {
-        log.info("get");
         Map<SiteEntity, List<LemmaEntity>> listLemmasEntityFromSiteMap = new HashMap<>();
         if (site == null || site.isEmpty()) {
             List<SiteEntity> siteEntities = sitesRepository.findAll();
@@ -146,7 +125,6 @@ public class SearchServiceImpl implements SearchService {
         }
         SiteEntity siteEntity = sitesRepository.findBySiteUrl(site);
         listLemmasEntityFromSiteMap.put(siteEntity, getLemmaEntityListFromSite(query, siteEntity));
-        log.info("{}",listLemmasEntityFromSiteMap.keySet().size());
         return listLemmasEntityFromSiteMap;
     }
 
